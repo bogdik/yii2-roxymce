@@ -65,9 +65,9 @@ class ManagementController extends Controller {
 	 */
 	public function actionFolderCreate($name, $folder = '') {
 		if ($folder == '') {
-			$folder = Yii::getAlias($this->module->uploadFolder);
+			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
-		$folder = realpath($folder);
+		$folder = $this->module->NoAlias ? $folder : realpath($folder);
 		if (is_dir($folder)) {
 			if (file_exists($folder . DIRECTORY_SEPARATOR . $name)) {
 				$response = [
@@ -111,9 +111,9 @@ class ManagementController extends Controller {
 	 */
 	public function actionFolderList($folder = '') {
 		if ($folder == '') {
-			$folder = Yii::getAlias($this->module->uploadFolder);
+			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
-		$folder  = realpath($folder);
+		$folder  = $this->module->NoAlias ? $folder : realpath($folder);
 		$content = FolderHelper::folderList($folder);
 		return [
 			'error'   => 0,
@@ -132,9 +132,9 @@ class ManagementController extends Controller {
 		 * @var Module $module
 		 */
 		$module = Yii::$app->getModule('roxymce');
-		$folder = realpath($folder);
+		$folder = $this->module->NoAlias ? $folder : realpath($folder);
 		if ($folder == '') {
-			$folder = Yii::getAlias($this->module->uploadFolder);
+			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
 		if ($module->rememberLastFolder) {
 			Yii::$app->cache->set('roxy_last_folder', $folder);
@@ -181,7 +181,7 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t rename root folder'),
 			];
 		}
-		$folder    = realpath($folder);
+		$folder    = $this->module->NoAlias ? $folder : realpath($folder);
 		$newFolder = dirname($folder) . DIRECTORY_SEPARATOR . $name;
 		if (rename($folder, $newFolder)) {
 			return [
@@ -210,7 +210,7 @@ class ManagementController extends Controller {
 	 * @return array
 	 */
 	public function actionFolderRemove($folder, $parentFolder = '') {
-		$folder           = realpath($folder);
+		$folder           = $this->module->NoAlias ? $folder : realpath($folder);
 		$folderProperties = FolderHelper::folderList($folder);
 		if ($folderProperties != null && isset($folderProperties[0]['nodes']) && $folderProperties[0]['nodes'] != null) {
 			return [
@@ -254,9 +254,9 @@ class ManagementController extends Controller {
 	 */
 	public function actionFileUpload($folder = '') {
 		if ($folder == '') {
-			$folder = Yii::getAlias($this->module->uploadFolder);
+			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
-		$folder = realpath($folder);
+		$folder = $this->module->NoAlias ? $folder : realpath($folder);
 		if (is_dir($folder)) {
 			$model       = new UploadForm();
 			$model->file = UploadedFile::getInstances($model, 'file');
@@ -293,7 +293,7 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t rename this file'),
 			];
 		}
-		$folder  = realpath($folder);
+		$folder  = $this->module->NoAlias ? $folder : realpath($folder);
 		$oldFile = $folder . DIRECTORY_SEPARATOR . $file;
 		$newFile = $folder . DIRECTORY_SEPARATOR . $name;
 		if (is_file($oldFile) && rename($oldFile, $newFile)) {
@@ -322,7 +322,7 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t remove this file'),
 			];
 		}
-		$folder   = realpath($folder);
+		$folder   = $this->module->NoAlias ? $folder : realpath($folder);
 		$filePath = $folder . DIRECTORY_SEPARATOR . $file;
 		if (is_file($filePath) && unlink($filePath)) {
 			return [
@@ -351,7 +351,7 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t cut this file'),
 			];
 		}
-		$folder   = realpath($folder);
+		$folder   = $this->module->NoAlias ? $folder : realpath($folder);
 		$filePath = $folder . DIRECTORY_SEPARATOR . $file;
 		if (Yii::$app->session->hasFlash('roxymce_copy')) {
 			Yii::$app->session->removeFlash('roxymce_copy');
@@ -377,7 +377,7 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t copy this file'),
 			];
 		}
-		$folder   = realpath($folder);
+		$folder   = $this->module->NoAlias ? $folder : realpath($folder);
 		$filePath = $folder . DIRECTORY_SEPARATOR . $file;
 		if (Yii::$app->session->hasFlash('roxymce_cut')) {
 			Yii::$app->session->removeFlash('roxymce_cut');
@@ -400,7 +400,7 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t past the clipboard'),
 			];
 		}
-		$folder   = realpath($folder);
+		$folder   = $this->module->NoAlias ? $folder : realpath($folder);
 		$filePath = null;
 		$return   = false;
 		if (Yii::$app->session->hasFlash('roxymce_cut')) {
@@ -408,7 +408,11 @@ class ManagementController extends Controller {
 			$return   = rename($filePath, $folder . DIRECTORY_SEPARATOR . basename($filePath));
 		} else if (Yii::$app->session->hasFlash('roxymce_copy')) {
 			$filePath = Yii::$app->session->getFlash('roxymce_copy');
-			$return   = copy($filePath, $folder . DIRECTORY_SEPARATOR . basename($filePath));
+            if($filePath==$folder . DIRECTORY_SEPARATOR . basename($filePath)){
+                $return = copy($filePath, $folder . DIRECTORY_SEPARATOR . 'copy_'.time().'_'.basename($filePath));
+            } else {
+                $return = copy($filePath, $folder . DIRECTORY_SEPARATOR . basename($filePath));
+            }
 		}
 		if ($return && $filePath != null) {
 			return [

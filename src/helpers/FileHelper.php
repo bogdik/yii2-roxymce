@@ -14,6 +14,7 @@ use navatech\roxymce\Module;
 use Yii;
 use yii\base\InvalidConfigException;
 
+
 class FileHelper {
 
 	/**
@@ -73,9 +74,10 @@ class FileHelper {
 	public static function fileUrl($path) {
 		/**@var Module $module */
 		$module    = Yii::$app->getModule('roxymce');
-		$uploadUrl = str_replace('\\', '/', Yii::getAlias($module->uploadFolder));
-		$path      = Yii::getAlias(str_replace('\\', '/', $path));
+		$uploadUrl = str_replace('\\', '/', $module->NoAlias ? $module->uploadFolder : Yii::getAlias($module->uploadFolder));
+		$path      =  $module->NoAlias ? str_replace('\\', '/', $path) : Yii::getAlias(str_replace('\\', '/', $path));
 		return str_replace('\\', '/', str_replace($uploadUrl, $module->uploadUrl, $path));
+
 	}
 
 	/**

@@ -14,6 +14,7 @@ use navatech\roxymce\helpers\FileHelper;
 use navatech\roxymce\Module;
 use yii\base\Model;
 use yii\web\UploadedFile;
+use yii\helpers\BaseInflector;
 
 class UploadForm extends Model {
 
@@ -47,9 +48,10 @@ class UploadForm extends Model {
 	public function upload($folder) {
 		if ($this->validate()) {
 			foreach ($this->file as $file) {
-				$filePath = $folder . DIRECTORY_SEPARATOR . FileHelper::removeSign($file->baseName) . '.' . $file->extension;
+                $file_sluged = (new BaseInflector)->slug($file->baseName);
+				$filePath = $folder . DIRECTORY_SEPARATOR . FileHelper::removeSign($file_sluged) . '.' . $file->extension;
 				if (file_exists($filePath)) {
-					$filePath = $folder . DIRECTORY_SEPARATOR . FileHelper::removeSign($file->baseName) . '_' . time() . '.' . $file->extension;
+					$filePath = $folder . DIRECTORY_SEPARATOR . FileHelper::removeSign($file_sluged) . '_' . time() . '.' . $file->extension;
 				}
 				$file->saveAs($filePath);
 			}

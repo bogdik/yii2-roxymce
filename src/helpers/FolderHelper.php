@@ -34,9 +34,10 @@ class FolderHelper {
 	 * @return array|bool
 	 */
 	public static function folderList($path) {
-		$path = realpath($path);
+
 		/**@var Module $module */
 		$module = Yii::$app->getModule('roxymce');
+        $path = $module->NoAlias ? $path : realpath($path);
 		$state  = [
 			'checked'  => true,
 			'expanded' => true,
@@ -44,8 +45,8 @@ class FolderHelper {
 		];
 		if ($module->rememberLastFolder && Yii::$app->cache->exists('roxy_last_folder')) {
 			$state = [
-				'checked'  => $path == realpath(Yii::$app->cache->get('roxy_last_folder')),
-				'selected' => $path == realpath(Yii::$app->cache->get('roxy_last_folder')),
+				'checked'  => $path ==  $module->NoAlias ? Yii::$app->cache->get('roxy_last_folder') : realpath(Yii::$app->cache->get('roxy_last_folder')),
+				'selected' => $path == $module->NoAlias ? Yii::$app->cache->get('roxy_last_folder') : realpath(Yii::$app->cache->get('roxy_last_folder')),
 				'expanded' => true,
 			];
 		}
@@ -70,22 +71,23 @@ class FolderHelper {
 	 * @return array|bool
 	 */
 	private static function _folderList($path) {
-		$path = realpath($path);
+
 		/**@var Module $module */
 		$module   = Yii::$app->getModule('roxymce');
+        $path = $module->NoAlias ? $path : realpath($path);
 		$response = null;
 		if (is_dir($path)) {
 			$dirs = glob($path . '/*', GLOB_ONLYDIR);
 			foreach ($dirs as $dir) {
-				$dir   = realpath($dir);
+				$dir   = $module->NoAlias ? $dir :realpath($dir);
 				$state = [
 					'checked'  => false,
 					'selected' => false,
 				];
 				if ($module->rememberLastFolder && Yii::$app->cache->exists('roxy_last_folder')) {
 					$state = [
-						'checked'  => $dir == realpath(Yii::$app->cache->get('roxy_last_folder')),
-						'selected' => $dir == realpath(Yii::$app->cache->get('roxy_last_folder')),
+						'checked'  => $dir == $module->NoAlias ? Yii::$app->cache->get('roxy_last_folder') : realpath(Yii::$app->cache->get('roxy_last_folder')),
+						'selected' => $dir == $module->NoAlias ? Yii::$app->cache->get('roxy_last_folder') : realpath(Yii::$app->cache->get('roxy_last_folder')),
 					];
 				}
 				$array      = [
@@ -114,7 +116,8 @@ class FolderHelper {
 	 * @return array
 	 */
 	public static function fileList($path, $sort = self::SORT_DATE_DESC) {
-		$path    = realpath($path);
+        $module   = Yii::$app->getModule('roxymce');
+        $path = $module->NoAlias ? $path : realpath($path);
 		$ignored = '.|..|.svn|.htaccess|.ftpquota|robots.txt|.idea|.git';
 		$files   = array();
 		foreach (scandir($path) as $file) {
@@ -170,7 +173,7 @@ class FolderHelper {
 	 * @return string
 	 */
 	public static function rootFolderName() {
-		$rootFolder = Yii::getAlias(Yii::$app->getModule('roxymce')->uploadFolder);
+		$rootFolder = Yii::$app->getModule('roxymce')->NoAlias ? Yii::$app->getModule('roxymce')->uploadFolder : Yii::getAlias(Yii::$app->getModule('roxymce')->uploadFolder);
 		return basename($rootFolder);
 	}
 }

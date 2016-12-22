@@ -12,6 +12,7 @@ namespace navatech\roxymce;
 
 use Yii;
 use yii\base\InvalidParamException;
+use yii\web\HttpException;
 
 /**
  * {@inheritDoc}
@@ -21,6 +22,7 @@ class Module extends \navatech\base\Module {
 	/**
 	 * @var string default folder which will be used to upload resource
 	 *             must be start with @
+     * if you use AddUserIdToPath then [userid] must be add to string
 	 */
 	public $uploadFolder = '@app/web/uploads/images';
 
@@ -28,6 +30,7 @@ class Module extends \navatech\base\Module {
 	 * @var string url of $uploadFolder
 	 *             not include 'http://domain.com'
 	 *             must be start with /
+     * if you use AddUserIdToPath then [userid] must be add to string
 	 */
 	public $uploadUrl = '/uploads/images';
 
@@ -52,6 +55,21 @@ class Module extends \navatech\base\Module {
 	 */
 	public $rememberLastOrder = true;
 
+    /**
+     * @var bool access only autorized users?
+     */
+    public $onlyAutorizeUsers = true;
+
+    /**
+     * @var bool Added user id to path extend on onlyAutorizeUsers?
+     */
+    public $AddUserIdToPath = true;
+
+    /**
+     * @var bool Added user id to path extend on onlyAutorizeUsers?
+     */
+    public $NoAlias = true;
+
 	/**
 	 * @var string default allowed files extension
 	 */
@@ -68,12 +86,20 @@ class Module extends \navatech\base\Module {
 	 * @throws InvalidParamException
 	 */
 	public function init() {
+        //echo $this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder);exit;
+	    if($this->onlyAutorizeUsers && Yii::$app->user->getIsGuest()) {
+            throw new HttpException(503 ,'Access denied');
+        }
 		parent::init();
-		if (!is_dir(Yii::getAlias($this->uploadFolder))) {
-			mkdir(Yii::getAlias($this->uploadFolder), 0777, true);
+        if($this->onlyAutorizeUsers && $this->AddUserIdToPath && strripos($this->uploadFolder, '[userid]') && strripos($this->uploadUrl, '[userid]')) {
+            $this->uploadFolder=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->uploadFolder);
+            $this->uploadUrl=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->uploadUrl);
+        }
+		if (!is_dir($this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder))) {
+			mkdir($this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder), 0777, true);
 		}
 		if(!Yii::$app->cache->exists('roxy_last_order')) {
-			Yii::$app->cache->set('roxy_last_folder', Yii::getAlias($this->uploadFolder));
+			Yii::$app->cache->set('roxy_last_folder', $this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder));
 		}
 	}
 }
