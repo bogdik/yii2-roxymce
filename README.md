@@ -6,11 +6,11 @@ Install
 Preferred way to install this extension through [composer](http://getcomposer.org)  
 Either run
 ~~~
-composer require navatech/yii2-roxymce "^2.0"
+composer require bogdik/yii2-roxymce "^2.0"
 ~~~
 Or add to `require` section of `composer.json` then run `composer update`
 ~~~
-"navatech/yii2-roxymce" : "^2.0" 
+"bogdik/yii2-roxymce" : "^2.0" 
 ~~~
 
 Configure & Usage
@@ -31,4 +31,4 @@ Resource
 
 Bugs & Issues
 ---
-Found some bugs? Just [create an issue](https://github.com/navatech/yii2-roxymce/issues/new) or [fork it](https://github.com/navatech/yii2-roxymce) and send pull request
+Found some bugs? Just [create an issue](https://github.com/bogdik/yii2-roxymce/issues/new) or [fork it](https://github.com/bogdik/yii2-roxymce) and send pull request
