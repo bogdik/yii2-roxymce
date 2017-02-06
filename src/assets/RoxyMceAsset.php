@@ -40,7 +40,7 @@ class RoxyMceAsset extends AssetBundle {
 			YII_ENV_DEV ? 'css/roxy.css' : 'css/roxy.min.css',
 		];
 		$this->js         = [
-			//YII_ENV_DEV ? 'js/roxy.js' : 'js/roxy.min.js',
+			YII_ENV_DEV ? 'js/roxy.js' : 'js/roxy.min.js',
 		];
 		Yii::$app->view->registerJs('var msg_somethings_went_wrong = "' . Yii::t('roxy', 'Somethings went wrong') . '",
 msg_empty_directory = "' . Yii::t('roxy', 'Empty directory') . '",

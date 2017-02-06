@@ -362,7 +362,7 @@ class RoxyFilemanWidget extends Widget {
         </div>
     </div>
 </div>';
-        $this->view->registerJsFile('js/roxy.js');
+        //$this->view->registerJsFile('js/roxy.min.js');
         $this->view->registerJs('showFolderList(folder_list.data(\'url\'));
         showFileList($(".file-list").data(\'url\'));
         reinit_right_click();
