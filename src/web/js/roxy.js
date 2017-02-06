@@ -3,11 +3,289 @@ var folder_list                 = $(".folder-list");
 var current_url                 = '';
 var file_cut, file_copy, target = null;
 /**
+ * Set cookies functional
+ * @name String name for cookie
+ * @value String value for cookie
+ * @exp_y String It sets the year of the expiration of the cookie shelf life.
+ * @exp_m String It sets the month of the expiration of the cookie shelf life.
+ * @exp_d String It sets the day of the expiration of the cookie shelf life.
+ * @path String This sets the path to the site in which the cookie is valid. Get the value of a cookie can only
+ * 		documents from the specified path. Typically, this property is left empty, which means that only the document
+ * 		set a cookie can access it.
+ * @domain String This option sets the domain in which the cookie is valid. Get the value of a cookie can only be from
+ * 		the specified domain sites. Typically, this property is left empty, which means that only the domain has set
+ * 		a cookie can access it.
+ * @secure String This option tells the browser what to send cookies to the server to use SSL. Very rarely used.
+ */
+function set_cookie( name, value, exp_y, exp_m, exp_d, path, domain, secure )
+{
+	var cookie_string = name + "=" + encodeURIComponent ( value );
+	if ( exp_y )
+	{
+		var expires = new Date ( exp_y, exp_m, exp_d );
+		cookie_string += "; expires=" + expires.toGMTString();
+	}
+	if ( path )
+		cookie_string += "; path=" + encodeURIComponent ( path );
+
+	if ( domain )
+		cookie_string += "; domain=" + encodeURIComponent( domain );
+	if ( secure )
+		cookie_string += "; secure";
+	document.cookie = cookie_string;
+}
+/**
+ * The modal alert window through Fancybox
+ * @msg String show message on alert
+ */
+function fancyAlert(msg) {
+	$.fancybox({
+		'autoCenter': false,
+		'fitToView': false,
+		'autoResize': false,
+		'topRatio': '0.2',
+		'content' : "<div style=\"margin:1px;width:240px;\">"+msg+"<div style=\"text-align:right;margin-top:10px;\">" +
+		"<span class='btn btn-success' style=\"bottom: 0;right: 0;position: absolute;\" onclick=\"$.fancybox.close();\">"+msg_ok+"</span></div></div>"
+	});
+}
+/**
+ * The modal rename window through Fancybox
+ * @type String file or folder
+ */
+function fancyRename(type) {
+	var content="";
+		if(type!='folder' && type!='file'){
+			return false;
+		}
+			content="<div style=\"margin:1px;width:340px;\">"+$('#form-'+type+'-rename').html()+"</div>";
+		$.fancybox({
+			autoCenter: false,
+			fitToView: false,
+			autoResize: false,
+			topRatio: '0.1',
+			content : content
+		});
+		if(type=='folder'){
+			$('.fancybox-wrap #folder_name').val($('.node-selected').text());
+		} else if(type=='file') {
+			var file_selected_list  = $('.btn-file-preview');
+			$('.fancybox-wrap [name="file"]').val(file_selected_list.attr('title'));
+			$('.fancybox-wrap #file_name').val(file_selected_list.attr('title'));
+		}
+
+
+}
+/**
+ * Rename folder functional
+ */
+function fancyRenameFolder() {
+		var form = $(".fancybox-wrap").find("form");
+		$.ajax({
+			type    : "GET",
+			cache   : false,
+			data    : form.serializeArray(),
+			url     : form.attr("action"),
+			dataType: "json",
+			success : function(response) {
+				if(response.error == 0) {
+					$.fancybox.close();
+					var newNode = {
+						text        : response.data.text,
+						href        : response.data.href,
+						path        : response.data.path,
+						icon        : 'glyphicon glyphicon-folder-close',
+						selectedIcon: "glyphicon glyphicon-folder-open"
+					};
+					showFolderList($(".folder-list").data('url'));
+					showFileList($(".file-list").data('url'));
+				} else {
+					fancyAlert(response.message);
+				}
+			},
+			error   : function() {
+				fancyAlert(msg_somethings_went_wrong);
+			}
+		});
+	}
+/**
+ * Rename file functional
+ */
+function fancyRenameFile() {
+	var form = $(".fancybox-wrap").find("form");
+	$.ajax({
+		type    : "GET",
+		cache   : false,
+		data    : form.serializeArray(),
+		url     : form.attr("action"),
+		dataType: "json",
+		success : function(response) {
+			if(response.error == 0) {
+				$.fancybox.close();
+				var this_slct=$(".file-list-item").find('.selected');
+				$("#file-rename").find("input[name='file']").val(response.data.name);
+				this_slct.find('.file-name').find('span').text(response.data.name);
+				this_slct.attr('data-title',response.data.name);
+				this_slct.attr('data-url',response.data.url);
+				$(".btn-file-preview").attr('href', response.data.url).attr('title', response.data.name);
+
+			} else {
+				fancyAlert(response.message);
+			}
+		},
+		error   : function() {
+			fancyAlert(msg_somethings_went_wrong);
+		}
+	});
+	return false;
+}
+/**
+ * The modal create window through Fancybox
+ */
+function fancyCreate() {
+	$.fancybox({
+		autoCenter: false,
+		fitToView: false,
+		autoResize: false,
+		topRatio: '0.1',
+		content : "<div style=\"margin:1px;width:240px;\">"+$('#form-folder-create').html()+"</div>"
+	});
+}
+/**
+ * Create folder functional
+ */
+function fancyCreateFolder() {
+	var form = $(".fancybox-wrap").find("form");
+	$.ajax({
+		type    : "GET",
+		cache   : false,
+		data    : form.serializeArray(),
+		url     : form.attr("action"),
+		dataType: "json",
+		success : function(response) {
+			if(response.error == 0) {
+				$.fancybox.close();
+				var newNode = {
+					text        : response.data.text,
+					href        : response.data.href,
+					path        : response.data.path,
+					icon        : 'glyphicon glyphicon-folder-close',
+					selectedIcon: "glyphicon glyphicon-folder-open"
+				};
+				showFolderList($(".folder-list").data('url'));
+				showFileList($(".file-list").data('url'));
+			} else {
+				fancyAlert(response.message);
+			}
+		},
+		error   : function() {
+			fancyAlert(msg_somethings_went_wrong);
+		}
+	});
+}
+/**
+ * Remove folder functional
+ * @ret Bool if true run delete folder
+ */
+function fancyRemoveFolder(ret) {
+	if(ret) {
+		var node = $(".folder-list").treeview('getSelected');
+		$.ajax({
+			type    : "GET",
+			cache   : false,
+			url     : url_folder_remove + '?folder=' + node[0].path,
+			dataType: "json",
+			success : function(response) {
+				if(response.error == 0) {
+					showFolderList($(".folder-list").data('url'));
+					showFileList($(".file-list").data('url'));
+				} else {
+					fancyAlert(response.message);
+				}
+			},
+			error   : function() {
+				fancyAlert(msg_somethings_went_wrong);
+			}
+		});
+	}
+}
+/**
+ * Remove file functional
+ * @ret Bool if true run delete file
+ */
+function fancyRemoveFile(ret) {
+	if(ret) {
+		var node = $(".folder-list").treeview('getSelected');
+		var file = $(".btn-file-preview").attr('title');
+		$.ajax({
+			type    : "GET",
+			cache   : false,
+			url     : url_file_remove + '?folder=' + node[0].path + '&file=' + file,
+			dataType: "json",
+			success : function(response) {
+				if(response.error == 0) {
+					var th = $(".file-list-item").find('.selected');
+					if(th.hasClass('list')) {
+						th.fadeOut('normal', function() {
+							$(this).remove();
+						});
+					} else {
+						th.parent().fadeOut('normal', function() {
+							$(this).remove();
+						})
+					}
+				} else {
+					fancyAlert(response.message);
+				}
+				reloadActionButton();
+			},
+			error   : function() {
+				fancyAlert(msg_somethings_went_wrong);
+				reloadActionButton();
+			}
+		});
+	}
+}
+/**
+ * The modal confirm window through Fancybox
+ * @msg String show message on confirm
+ * @callback Function call if accept after close
+ */
+function fancyConfirm(msg,callback) {
+	var ret;
+	$.fancybox({
+		modal : false,
+		autoCenter: false,
+		fitToView: false,
+		autoResize: false,
+		topRatio: '0.1',
+		closeBtn: true,
+		hideOnOverlayClick: true,
+		content : "<div style=\"margin:1px;width:340px;\">"+msg+"<div style=\"text-align:right;margin-top:10px;\">" +
+		"<span id=\"fancyConfirm_ok\" style=\"bottom: 0;right: 80px;position: absolute;\" class='btn btn-success'>"+msg_ok+"</span>" +
+		"<span id=\"fancyConfirm_cancel\" style=\"bottom: 0;right: 0;position: absolute;\" class='btn btn-danger'>"+msg_cancel+"</span>" +
+		"</div></div>",
+		afterShow : function() {
+			$("#fancyConfirm_cancel").click(function() {
+				ret = false;
+				$.fancybox.close();
+			});
+			$("#fancyConfirm_ok").click(function() {
+				ret = true;
+				$.fancybox.close();
+			});
+		},
+		afterClose : function() {
+			if (typeof callback == 'function'){ callback.call(this, ret); }
+		}
+	});
+}
+/**
  * Event when document loaded
  */
 $(document).on("ready", function() {
 	showFolderList(folder_list.data('url'));
 	showFileList($(".file-list").data('url'));
+	reinit_right_click();
 	$("a#single_image").fancybox();
 });
 /**
@@ -35,6 +313,7 @@ $(document).on("click", "[data-action='switch_view']", function() {
 	$(".btn-file-preview").removeAttr('href');
 	$(".btn-roxymce-select").attr('disabled', 'disabled');
 	$('#txtSearch').val('');
+	set_cookie ('roxyFileMan',$(this).attr('data-name'));
 	showFileList(current_url);
 });
 /**
@@ -45,17 +324,17 @@ $(document).on("click", ".file-list-item .thumb,.file-list-item .list", function
 	$(".file-list-item .thumb, .file-list-item .list").removeClass('selected');
 	th.addClass("selected");
 	$(".first-row button,.first-row a").removeAttr("disabled");
-	$(".btn-file-download").attr('href', th.data('url')).attr('target', '_blank');
-	$(".btn-file-preview").attr('href', th.data('url')).attr('title', th.data('title')).fancybox({
+	$(".btn-file-download").attr('href', th.attr('data-url')).attr('target', '_blank');
+	$(".btn-file-preview").attr('href', th.attr('data-url')).attr('title', th.attr('data-title')).fancybox({
 		type     : th.data('image') == 1 ? 'image' : 'iframe',
 		padding  : 5,
 		fitToView: true,
 		autoSize : true
 	});
-	var node  = folder_list.treeview('getSelected');
+	var node  = $(".folder-list").treeview('getSelected');
 	var modal = $("#file-rename");
-	modal.find("input[name='file']").val(th.data('title'));
-	modal.find("input[name='name']").val(th.data('title'));
+	modal.find("input[name='file']").val(th.attr('data-title'));
+	modal.find("input[name='name']").val(th.attr('data-title'));
 	modal.find("input[name='folder']").val(node[0].path);
 	$(".btn-roxymce-select").removeAttr('disabled');
 });
@@ -87,15 +366,15 @@ $(document).on("click", "#folder-create .btn-submit", function() {
 					};
 					folder_list.treeview('addNode', [newNode, node]);
 				} else {
-					alert(response.message);
+					fancyAlert(response.message);
 				}
 			},
 			error   : function() {
-				alert(msg_somethings_went_wrong);
+				fancyAlert(msg_somethings_went_wrong);
 			}
 		});
 	} else {
-		alert(msg_please_select_one_folder);
+		fancyAlert(msg_please_select_one_folder);
 		$('#folder-create').modal('hide');
 	}
 	return false;
@@ -104,6 +383,7 @@ $(document).on("click", "#folder-create .btn-submit", function() {
  * Event rename folder
  */
 $(document).on("click", "#folder-rename .btn-submit", function() {
+
 	var node = folder_list.treeview('getSelected');
 	if(node.length != 0) {
 		var th   = $(this);
@@ -127,15 +407,15 @@ $(document).on("click", "#folder-rename .btn-submit", function() {
 					folder_list.treeview('updateNode', [node, newNode]).treeview('selectNode', [newNode, {silent: true}]);
 					reloadTreeview(newNode);
 				} else {
-					alert(response.message);
+					fancyAlert(response.message);
 				}
 			},
 			error   : function() {
-				alert(msg_somethings_went_wrong);
+				fancyAlert(msg_somethings_went_wrong);
 			}
 		});
 	} else {
-		alert(msg_please_select_one_folder);
+		fancyAlert(msg_please_select_one_folder);
 		$('#folder-rename').modal('hide');
 	}
 	return false;
@@ -159,11 +439,11 @@ $(document).on("click", "#file-rename .btn-submit", function() {
 				modal.modal('hide');
 				$(".file-list-item").find('.selected').find('.file-name').find('span').text(response.data.name);
 			} else {
-				alert(response.message);
+				fancyAlert(response.message);
 			}
 		},
 		error   : function() {
-			alert(msg_somethings_went_wrong);
+			fancyAlert(msg_somethings_went_wrong);
 		}
 	});
 	return false;
@@ -174,7 +454,7 @@ $(document).on("click", "#file-rename .btn-submit", function() {
 $(document).on("click", ".btn-folder-remove", function() {
 	var node       = folder_list.treeview('getSelected');
 	var parentNode = folder_list.treeview('getParents', node)[0];
-	var conf       = confirm(msg_are_you_sure);
+	var conf       = 	fancyConfirm('asd');
 	if(conf) {
 		$.ajax({
 			type    : "GET",
@@ -188,11 +468,11 @@ $(document).on("click", ".btn-folder-remove", function() {
 					reloadTreeview(parentNode);
 					showFileList(current_url);
 				} else {
-					alert(response.message);
+					fancyAlert(response.message);
 				}
 			},
 			error   : function() {
-				alert(msg_somethings_went_wrong);
+				fancyAlert(msg_somethings_went_wrong);
 			}
 		})
 	}
@@ -223,12 +503,12 @@ $(document).on("click", ".btn-file-remove", function() {
 						})
 					}
 				} else {
-					alert(response.message);
+					fancyAlert(response.message);
 				}
 				reloadActionButton();
 			},
 			error   : function() {
-				alert(msg_somethings_went_wrong);
+				fancyAlert(msg_somethings_went_wrong);
 				reloadActionButton();
 			}
 		});
@@ -265,11 +545,11 @@ $(document).on("change", "input#uploadform-file", function() {
 				$(".image-list").append(response.html);
 				showFileList(th.attr('data-href'));
 			} else {
-				alert(response.message);
+				fancyAlert(response.message);
 			}
 		},
 		error      : function() {
-			alert(msg_somethings_went_wrong);
+			fancyAlert(msg_somethings_went_wrong);
 		}
 	});
 });
@@ -321,208 +601,222 @@ $(document).on('keyup', '#txtSearch', function() {
 /**
  * Event when re-order
  */
-$(document).on('click', '[rel="order"]', function() {
-	$('[rel="order"]').removeClass('sorted');
-	var order_by  = $(this).attr('data-order');
-	var sort      = 2;
-	var is_sorted = false;
-	var node      = folder_list.treeview('getSelected');
-	if($(this).attr('data-sort') == 'desc') {
-		$(this).addClass('sorted').attr('data-sort', 'asc');
-		order_by += '_asc';
-	} else {
-		$(this).addClass('sorted').attr('data-sort', 'desc');
-		order_by += '_desc';
-	}
-	switch(order_by) {
-		case 'date_asc':
-			sort = 1;
-			break;
-		case 'date_desc':
-			sort = 2;
-			break;
-		case 'name_asc':
-			sort = 3;
-			break;
-		case 'name_desc':
-			sort = 4;
-			break;
-		case 'size_asc':
-			sort = 5;
-			break;
-		case 'size_desc':
-			sort = 6;
-			break;
-		default:
-			sort = 2;
-			break;
-	}
-	var url = node[0].href;
-	$.each(parseQuery(url), function(a, b) {
-		if(a == 'sort') {
-			is_sorted = a + '=' + b;
+$(document).on('click', '[rel="order"]', function () {
+		$('[rel="order"]').removeClass('sorted');
+		var order_by = $(this).attr('data-order');
+		var sort = 2;
+		var is_sorted = false;
+		var node = $(".folder-list").treeview('getSelected');
+		if ($(this).attr('data-sort') == 'desc') {
+			$(this).addClass('sorted').attr('data-sort', 'asc');
+			order_by += '_asc';
+		} else {
+			$(this).addClass('sorted').attr('data-sort', 'desc');
+			order_by += '_desc';
 		}
+		switch (order_by) {
+			case 'date_asc':
+				sort = 1;
+				break;
+			case 'date_desc':
+				sort = 2;
+				break;
+			case 'name_asc':
+				sort = 3;
+				break;
+			case 'name_desc':
+				sort = 4;
+				break;
+			case 'size_asc':
+				sort = 5;
+				break;
+			case 'size_desc':
+				sort = 6;
+				break;
+			default:
+				sort = 2;
+				break;
+		}
+		var url = node[0].href;
+		$.each(parseQuery(url), function (a, b) {
+			if (a == 'sort') {
+				is_sorted = a + '=' + b;
+			}
+		});
+		if (is_sorted) {
+			url = node[0].href.replace(is_sorted, 'sort=' + sort);
+		} else {
+			url += '&sort=' + sort;
+		}
+		showFileList(url);
 	});
-	if(is_sorted) {
-		url = node[0].href.replace(is_sorted, 'sort=' + sort);
-	} else {
-		url += '&sort=' + sort;
-	}
-	showFileList(url);
-});
 /**
  * Re-set contextmenu while right click trigger
  * */
-$(".file-list-item")[0].oncontextmenu = function(e) {
-	target   = $(e.target);
-	var item = target.closest(".item");
-	if(item.length > 0) {
-		item.find(".list, .thumb").trigger('click');
-	} else {
-		target.closest(".file-list-item").find(".list, .thumb").removeClass('selected');
-		$(".first-row button,.first-row a").attr("disabled", "disabled");
-		var btn_file_preview = $(".btn-file-preview");
-		btn_file_preview.removeAttr('href').attr('title', btn_file_preview.text());
-		var btn_file_download = $(".btn-file-download");
-		btn_file_download.removeAttr('href').attr('title', btn_file_download.text());
-		$(".btn-roxymce-select").attr('disabled', 'disabled');
-	}
-	return false;
-};
+function reinit_right_click() {
+	$(".file-list-item")[0].oncontextmenu = function (e) {
+		target = $(e.target);
+		var item = target.closest(".item");
+		if (item.length > 0) {
+			item.find(".list, .thumb").trigger('click');
+		} else {
+			target.closest(".file-list-item").find(".list, .thumb").removeClass('selected');
+			$(".first-row button,.first-row a").attr("disabled", "disabled");
+			var btn_file_preview = $(".btn-file-preview");
+			btn_file_preview.removeAttr('href').attr('title', btn_file_preview.text());
+			var btn_file_download = $(".btn-file-download");
+			btn_file_download.removeAttr('href').attr('title', btn_file_download.text());
+			$(".btn-roxymce-select").attr('disabled', 'disabled');
+		}
+		return false;
+	};
+}
 /**
  * Define new contextmenu
  * */
 $.contextMenu({
-	selector: ".file-list-item",
-	items   : {
-		preview  : {
-			name    : msg_preview,
-			icon    : "fa-search",
-			callback: function() {
-				$(".btn-file-preview").trigger('click');
+		selector: ".file-list-item",
+		items: {
+			preview: {
+				name: msg_preview,
+				icon: "fa-search",
+				callback: function () {
+					$(".btn-file-preview").trigger('click');
+				},
+				disabled: function () {
+					return target.closest(".item").length == 0;
+				}
 			},
-			disabled: function() {
-				return target.closest(".item").length == 0;
-			}
-		},
-		download : {
-			name    : msg_download,
-			icon    : "fa-download",
-			callback: function() {
-				$(".btn-file-download").trigger('click');
+			download: {
+				name: msg_download,
+				icon: "fa-download",
+				callback: function () {
+					//$(".btn-file-download").trigger('click');
+					window.open($(".btn-file-download").attr('href'));
+				},
+				disabled: function () {
+					return target.closest(".item").length == 0;
+				}
 			},
-			disabled: function() {
-				return target.closest(".item").length == 0;
-			}
-		},
-		separator: {"type": "cm_separator"},
-		cut      : {
-			name    : msg_cut,
-			icon    : "fa-cut",
-			callback: function() {
-				var node = folder_list.treeview('getSelected');
-				var file = $(".btn-file-preview").attr('title');
-				$.ajax({
-					type    : "get",
-					cache   : false,
-					dataType: "json",
-					url     : url_file_cut + '?folder=' + node[0].path + '&file=' + file,
-					success : function(response) {
-						if(response.error == 0) {
-							file_copy = false;
-							file_cut  = true;
-						} else {
-							alert(response.message);
+			separator: {"type": "cm_separator"},
+			cut: {
+				name: msg_cut,
+				icon: "fa-cut",
+				callback: function () {
+					var node = $(".folder-list").treeview('getSelected');
+					var file = $(".btn-file-preview").attr('title');
+					$.ajax({
+						type: "get",
+						cache: false,
+						dataType: "json",
+						url: url_file_cut + '?folder=' + node[0].path + '&file=' + file,
+						success: function (response) {
+							if (response.error == 0) {
+								file_copy = false;
+								file_cut = true;
+							} else {
+								fancyAlert(response.message);
+							}
+						},
+						error: function () {
+							fancyAlert(msg_somethings_went_wrong);
 						}
-					},
-					error   : function() {
-						alert(msg_somethings_went_wrong);
-					}
-				});
+					});
+				},
+				disabled: function () {
+					return target.closest(".item").length == 0;
+				}
 			},
-			disabled: function() {
-				return target.closest(".item").length == 0;
-			}
-		},
-		copy     : {
-			name    : msg_copy,
-			icon    : "fa-copy",
-			callback: function() {
-				var node = folder_list.treeview('getSelected');
-				var file = $(".btn-file-preview").attr('title');
-				$.ajax({
-					type    : "get",
-					cache   : false,
-					dataType: "json",
-					url     : url_file_copy + '?folder=' + node[0].path + '&file=' + file,
-					success : function(response) {
-						if(response.error == 0) {
-							file_cut  = false;
-							file_copy = true;
-						} else {
-							alert(response.message);
+			copy: {
+				name: msg_copy,
+				icon: "fa-copy",
+				callback: function () {
+					var node = $(".folder-list").treeview('getSelected');
+					var file = $(".btn-file-preview").attr('title');
+					$.ajax({
+						type: "get",
+						cache: false,
+						dataType: "json",
+						url: url_file_copy + '?folder=' + node[0].path + '&file=' + file,
+						success: function (response) {
+							if (response.error == 0) {
+								file_cut = false;
+								file_copy = true;
+							} else {
+								fancyAlert(response.message);
+							}
+						},
+						error: function () {
+							fancyAlert(msg_somethings_went_wrong);
 						}
-					},
-					error   : function() {
-						alert(msg_somethings_went_wrong);
-					}
-				});
+					});
+				},
+				disabled: function () {
+					return target.closest(".item").length == 0;
+				}
 			},
-			disabled: function() {
-				return target.closest(".item").length == 0;
-			}
-		},
-		paste    : {
-			name    : msg_paste,
-			icon    : "fa-clipboard",
-			callback: function() {
-				var node = folder_list.treeview('getSelected');
-				var file = $(".btn-file-preview").attr('title');
-				$.ajax({
-					type    : "get",
-					cache   : false,
-					dataType: "json",
-					url     : url_file_paste + '?folder=' + node[0].path,
-					success : function(response) {
-						if(response.error == 0) {
-							file_copy = false;
-							file_cut  = false;
-							showFileList(node[0].href);
-						} else {
-							alert(response.message);
+			paste: {
+				name: msg_paste,
+				icon: "fa-clipboard",
+				callback: function () {
+					var node = $(".folder-list").treeview('getSelected');
+					var file = $(".btn-file-preview").attr('title');
+					$.ajax({
+						type: "get",
+						cache: false,
+						dataType: "json",
+						url: url_file_paste + '?folder=' + node[0].path,
+						success: function (response) {
+							if (response.error == 0) {
+								file_copy = false;
+								file_cut = false;
+								showFileList(node[0].href);
+							} else {
+								fancyAlert(response.message);
+							}
+						},
+						error: function () {
+							fancyAlert(msg_somethings_went_wrong);
 						}
-					},
-					error   : function() {
-						alert(msg_somethings_went_wrong);
+					});
+				},
+				disabled: function () {
+					return !file_copy && !file_cut;
+				}
+			},
+			rename: {
+				name: msg_rename,
+				icon: "fa-pencil",
+				callback: function () {
+					var rename_btn=$("#btn-file-rename");
+					if(rename_btn.length){
+						rename_btn.trigger('click');
+					} else {
+						$(".btn-file-rename").trigger('click');
 					}
-				});
+				},
+				disabled: function () {
+					return target.closest(".item").length == 0;
+				}
 			},
-			disabled: function() {
-				return !file_copy && !file_cut;
-			}
-		},
-		rename   : {
-			name    : msg_rename,
-			icon    : "fa-pencil",
-			callback: function() {
-				$(".btn-file-rename").trigger('click');
-			},
-			disabled: function() {
-				return target.closest(".item").length == 0;
-			}
-		},
-		remove   : {
-			name    : msg_delete,
-			icon    : "fa-trash",
-			callback: function() {
-				$(".btn-file-remove").trigger('click');
-			},
-			disabled: function() {
-				return target.closest(".item").length == 0;
+			remove: {
+				name: msg_delete,
+				icon: "fa-trash",
+				callback: function () {
+					var delete_btn=$("#btn-file-remove");
+					if(delete_btn.length){
+						delete_btn.trigger('click');
+					} else {
+						$(".btn-file-remove").trigger('click');
+					}
+				},
+				disabled: function () {
+					return target.closest(".item").length == 0;
+				}
 			}
 		}
-	}
 });
+
 /**
  * Function show file list on current url
  */
@@ -569,12 +863,12 @@ function showFileList(url) {
 					effect   : "fadeIn"
 				});
 			} else {
-				alert(response.message);
+				fancyAlert(response.message);
 				$(".file-list-item").html(msg_empty_directory);
 			}
 		},
 		error   : function() {
-			alert(msg_somethings_went_wrong);
+			fancyAlert(msg_somethings_went_wrong);
 			$(".file-list-item").html(msg_empty_directory);
 		}
 	});
@@ -598,11 +892,11 @@ function showFolderList(url) {
 				var node = folder_list.treeview('getNodes', node_id);
 				$("#folder-rename").find("input[name='folder']").val(node.path).parent().find("input[name='name']").val(node.text);
 			} else {
-				alert(response.message);
+				fancyAlert(response.message);
 			}
 		},
 		error   : function() {
-			alert(msg_somethings_went_wrong);
+			fancyAlert(msg_somethings_went_wrong);
 		}
 	});
 	return folder_list;

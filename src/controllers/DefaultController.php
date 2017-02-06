@@ -8,11 +8,11 @@
  * @time    4:19 CH
  * @version 2.0.0
  */
-namespace navatech\roxymce\controllers;
+namespace bogdik\roxymce\controllers;
 
-use navatech\roxymce\helpers\FolderHelper;
-use navatech\roxymce\models\UploadForm;
-use navatech\roxymce\Module;
+use bogdik\roxymce\helpers\FolderHelper;
+use bogdik\roxymce\models\UploadForm;
+use bogdik\roxymce\Module;
 use Yii;
 use yii\helpers\Url;
 use yii\web\Controller;

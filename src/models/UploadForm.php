@@ -8,10 +8,10 @@
  * @time    4:19 CH
  * @version 2.0.0
  */
-namespace navatech\roxymce\models;
+namespace bogdik\roxymce\models;
 
-use navatech\roxymce\helpers\FileHelper;
-use navatech\roxymce\Module;
+use bogdik\roxymce\helpers\FileHelper;
+use bogdik\roxymce\Module;
 use yii\base\Model;
 use yii\web\UploadedFile;
 use yii\helpers\BaseInflector;

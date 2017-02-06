@@ -8,9 +8,9 @@
  * @time    4:45 CH
  * @version 2.0.0
  */
-namespace navatech\roxymce\helpers;
+namespace bogdik\roxymce\helpers;
 
-use navatech\roxymce\Module;
+use bogdik\roxymce\Module;
 use Yii;
 use yii\helpers\Url;
 

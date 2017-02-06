@@ -14,10 +14,10 @@
  * @var int        $defaultOrder
  * @var string     $fileListUrl
  */
-use navatech\roxymce\assets\RoxyMceAsset;
-use navatech\roxymce\helpers\FolderHelper;
-use navatech\roxymce\models\UploadForm;
-use navatech\roxymce\Module;
+use bogdik\roxymce\assets\RoxyMceAsset;
+use bogdik\roxymce\helpers\FolderHelper;
+use bogdik\roxymce\models\UploadForm;
+use bogdik\roxymce\Module;
 use yii\bootstrap\Html;
 use yii\helpers\Url;
 use yii\web\View;

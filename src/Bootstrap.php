@@ -8,7 +8,7 @@
  * @time    11:50 PM
  * @version 2.0.0
  */
-namespace navatech\roxymce;
+namespace bogdik\roxymce;
 
 use Yii;
 use yii\base\Application;

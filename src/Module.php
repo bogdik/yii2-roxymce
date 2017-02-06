@@ -8,7 +8,7 @@
  * @time    4:33 CH
  * @version 2.0.0
  */
-namespace navatech\roxymce;
+namespace bogdik\roxymce;
 
 use Yii;
 use yii\base\InvalidParamException;
@@ -17,12 +17,12 @@ use yii\web\HttpException;
 /**
  * {@inheritDoc}
  */
-class Module extends \navatech\base\Module {
+class Module extends \bogdik\base\Module {
 
 	/**
 	 * @var string default folder which will be used to upload resource
 	 *             must be start with @
-     * if you use AddUserIdToPath then [userid] must be add to string
+     *             If you use AddUserIdToPath then [userid] must be add to string
 	 */
 	public $uploadFolder = '@app/web/uploads/images';
 
@@ -30,7 +30,7 @@ class Module extends \navatech\base\Module {
 	 * @var string url of $uploadFolder
 	 *             not include 'http://domain.com'
 	 *             must be start with /
-     * if you use AddUserIdToPath then [userid] must be add to string
+     *             If you use AddUserIdToPath then [userid] must be add to string
 	 */
 	public $uploadUrl = '/uploads/images';
 
@@ -61,15 +61,22 @@ class Module extends \navatech\base\Module {
     public $onlyAutorizeUsers = true;
 
     /**
-     * @var bool Added user id to path extend on onlyAutorizeUsers?
+     * @var bool Added user id to path extend on onlyAutorizeUsers
      */
     public $AddUserIdToPath = true;
 
     /**
-     * @var bool Added user id to path extend on onlyAutorizeUsers?
+     * @var bool No alias in path uploadFolder
      */
     public $NoAlias = true;
-
+    /**
+     * @var bool Do not change the file extension from
+     */
+    public $NoChangeFileExt = true;
+    /**
+     * @var bool No show buttons on Footer (Insert and Close)
+     */
+    public $NoFooterButton = false;
 	/**
 	 * @var string default allowed files extension
 	 */

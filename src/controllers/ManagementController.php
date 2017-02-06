@@ -8,12 +8,12 @@
  * @time    4:19 CH
  * @version 2.0.0
  */
-namespace navatech\roxymce\controllers;
+namespace bogdik\roxymce\controllers;
 
-use navatech\roxymce\helpers\FileHelper;
-use navatech\roxymce\helpers\FolderHelper;
-use navatech\roxymce\models\UploadForm;
-use navatech\roxymce\Module;
+use bogdik\roxymce\helpers\FileHelper;
+use bogdik\roxymce\helpers\FolderHelper;
+use bogdik\roxymce\models\UploadForm;
+use bogdik\roxymce\Module;
 use Yii;
 use yii\base\ErrorException;
 use yii\filters\ContentNegotiator;
@@ -67,6 +67,12 @@ class ManagementController extends Controller {
 		if ($folder == '') {
 			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
+        if(stristr($name, '../') || stristr($name, '..\\')){
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'Wrong name'),
+            ];
+        }
 		$folder = $this->module->NoAlias ? $folder : realpath($folder);
 		if (is_dir($folder)) {
 			if (file_exists($folder . DIRECTORY_SEPARATOR . $name)) {
@@ -131,8 +137,17 @@ class ManagementController extends Controller {
 		/**
 		 * @var Module $module
 		 */
+
 		$module = Yii::$app->getModule('roxymce');
+        if($folder!="" && (($this->module->NoAlias && $this->module->AddUserIdToPath && !stristr($folder, $this->module->uploadFolder)) || stristr($folder, "../"))){
+            return [
+                'error'   => 1,
+                'content' => "Not normal path",
+            ];
+        }
+
 		$folder = $this->module->NoAlias ? $folder : realpath($folder);
+
 		if ($folder == '') {
 			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
@@ -183,6 +198,18 @@ class ManagementController extends Controller {
 		}
 		$folder    = $this->module->NoAlias ? $folder : realpath($folder);
 		$newFolder = dirname($folder) . DIRECTORY_SEPARATOR . $name;
+        if(stristr($newFolder, '../') || stristr($newFolder, '..\\')){
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'Wrong name'),
+            ];
+        }
+        if (is_dir($newFolder)) {
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'Directory already exists'),
+            ];
+        }
 		if (rename($folder, $newFolder)) {
 			return [
 				'error' => 0,
@@ -211,6 +238,18 @@ class ManagementController extends Controller {
 	 */
 	public function actionFolderRemove($folder, $parentFolder = '') {
 		$folder           = $this->module->NoAlias ? $folder : realpath($folder);
+        if($this->module->NoAlias && $this->module->uploadFolder==$folder){
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'Can\'t delete root folder'),
+            ];
+        }
+        if(stristr($folder, '../') || stristr($folder, '..\\')){
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'Wrong name'),
+            ];
+        }
 		$folderProperties = FolderHelper::folderList($folder);
 		if ($folderProperties != null && isset($folderProperties[0]['nodes']) && $folderProperties[0]['nodes'] != null) {
 			return [
@@ -293,9 +332,33 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t rename this file'),
 			];
 		}
+
 		$folder  = $this->module->NoAlias ? $folder : realpath($folder);
 		$oldFile = $folder . DIRECTORY_SEPARATOR . $file;
 		$newFile = $folder . DIRECTORY_SEPARATOR . $name;
+        if($this->module->NoChangeFileExt){
+            $oldFile_ext = substr(strrchr($oldFile, "."), 1);
+            $newFile_ext = substr(strrchr($newFile, "."), 1);
+            if($oldFile_ext!=$newFile_ext){
+                return [
+                    'error'   => 1,
+                    'message' => Yii::t('roxy', 'Please, no change extension file'),
+                ];
+            }
+        }
+        $path_info =  pathinfo($newFile);
+        if($path_info['filename']==""){
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'File name can\'t be empty'),
+            ];
+        }
+        if (is_file($newFile)) {
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'File existed'),
+            ];
+        }
 		if (is_file($oldFile) && rename($oldFile, $newFile)) {
 			return [
 				'error' => 0,
@@ -304,13 +367,14 @@ class ManagementController extends Controller {
 						'/roxymce/management/file-list',
 						'folder' => $folder,
 					]),
+                    'url' => $folder.'/'.$name,
 					'name' => $name,
 				],
 			];
 		} else {
 			return [
 				'error'   => 1,
-				'message' => Yii::t('roxy', 'Somethings went wrong'),
+				'message' => Yii::t('roxy', 'Can\'t rename this file'),
 			];
 		}
 	}
@@ -409,7 +473,11 @@ class ManagementController extends Controller {
 		} else if (Yii::$app->session->hasFlash('roxymce_copy')) {
 			$filePath = Yii::$app->session->getFlash('roxymce_copy');
             if($filePath==$folder . DIRECTORY_SEPARATOR . basename($filePath)){
-                $return = copy($filePath, $folder . DIRECTORY_SEPARATOR . 'copy_'.time().'_'.basename($filePath));
+                $file_name=basename($filePath);
+                if(preg_match ('/copy_\d+/',$file_name)){
+                    $file_name= preg_replace('/copy_\d+_/', '', $file_name);
+                }
+                $return = copy($filePath, $folder . DIRECTORY_SEPARATOR . 'copy_'.time().'_'.$file_name);
             } else {
                 $return = copy($filePath, $folder . DIRECTORY_SEPARATOR . basename($filePath));
             }
