@@ -41,4 +41,4 @@ echo \bogdik\roxymce\widgets\RoxyFilemanWidget::widget([
     'NoFooterButton' => false,
 ]);
 ~~~
-Settings see: [Config module](docs/module.md)
+Settings see: [Config module](module.md)
