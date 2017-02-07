@@ -32,6 +32,7 @@ echo \bogdik\roxymce\widgets\RoxyMceWidget::widget([
 Modal window now worked on fancyBox, normal work in Bootstrap modal 
 
 example:
+~~~
 echo \bogdik\roxymce\widgets\RoxyFilemanWidget::widget([
     'uploadFolder' => 'uploads/[userid]/media',
     'uploadUrl' => '/uploads/[userid]/media',
@@ -39,4 +40,5 @@ echo \bogdik\roxymce\widgets\RoxyFilemanWidget::widget([
     'rememberLastOrder' => false,
     'NoFooterButton' => false,
 ]);
+~~~
 Settings see: [Config module](docs/module.md)
