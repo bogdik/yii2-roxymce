@@ -27,3 +27,5 @@ In your view file, call roxymce widget
 		$("a").fancybox();
 	</script>
 ~~~
+
+You may be use RoxyFilemanWidget for it, See [Widget usage](docs/widget.md)

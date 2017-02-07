@@ -15,7 +15,7 @@ In your view file, call roxymce widget
 #### Include ActiveRecord Model
 ~~~
 [php]
-echo \navatech\roxymce\widgets\RoxyMceWidget::widget([
+echo \bogdik\roxymce\widgets\RoxyMceWidget::widget([
 	'model'     => app\models\Post::findOne(1),
 	'attribute' => 'content',
 ]);
@@ -23,7 +23,20 @@ echo \navatech\roxymce\widgets\RoxyMceWidget::widget([
 #### Sample HTML without ActiveRecord Model
 ~~~
 [php]
-echo \navatech\roxymce\widgets\RoxyMceWidget::widget([
+echo \bogdik\roxymce\widgets\RoxyMceWidget::widget([
 	'name' => 'Post[content]'
 ]);
 ~~~
+
+### New Widget added
+Modal window now worked on fancyBox, normal work in Bootstrap modal 
+
+example:
+echo \bogdik\roxymce\widgets\RoxyFilemanWidget::widget([
+    'uploadFolder' => 'uploads/[userid]/media',
+    'uploadUrl' => '/uploads/[userid]/media',
+    'rememberLastFolder' => false,
+    'rememberLastOrder' => false,
+    'NoFooterButton' => false,
+]);
+Settings see: [Config module](docs/module.md)
