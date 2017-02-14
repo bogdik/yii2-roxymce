@@ -212,4 +212,11 @@ RoxyMceAsset::register($this);
 	</div>
 </div>
 <script>
+
 </script>
+<?php
+($module->NoImgPreview)? $module->NoImgPreview='true':$module->NoImgPreview='false';
+$this->registerJs(
+	'no_image_prev='.$module->NoImgPreview.';'
+	, $this::POS_END);
+?>

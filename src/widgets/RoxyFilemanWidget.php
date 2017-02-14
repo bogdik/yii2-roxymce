@@ -47,7 +47,14 @@ class RoxyFilemanWidget extends Widget {
      *             If you use AddUserIdToPath then [userid] must be add to string
      */
     public $uploadUrl = '/uploads/images';
-
+    /**
+     * @var string root user directory need for disk size limit feature
+     *             must be start with @
+     *             If you use AddUserIdToPath then [userid] must be add to string
+     *             example uploads/[userid]
+     *             this var must be included in var uploadFolder
+     */
+    public $userRootdir = '';
     /**
      * @var string default view type
      */
@@ -83,7 +90,14 @@ class RoxyFilemanWidget extends Widget {
      * @var bool No alias in path uploadFolder
      */
     public $NoAlias = true;
-
+    /**
+     * @var bool Limit disk size for user extend on onlyAutorizeUsers and [userid] in path
+     */
+    public $DiskSizeLimit = false;
+    /**
+     * @var number Limit disk size value for user in bytes Default 512mb.
+     */
+    public $limitValue = 536870912;
     /**
      * @var bool Do not change the file extension from
      */
@@ -93,7 +107,14 @@ class RoxyFilemanWidget extends Widget {
      * @var bool No show buttons on Footer (Insert and Close)
      */
     public $NoFooterButton = false;
-
+    /**
+     * @var bool No img filetypes preview, enable this may be dangerous xss
+     */
+    public $NoImgPreview = false;
+    /**
+     * @var string top ratio
+     */
+    public $topRatio = '0.1';
     /**
      * @var string default allowed files extension
      */
@@ -115,12 +136,33 @@ class RoxyFilemanWidget extends Widget {
             throw new HttpException(503 ,'Access denied');
         }
         parent::init();
+
         if($this->onlyAutorizeUsers && $this->AddUserIdToPath && strripos($this->uploadFolder, '[userid]') && strripos($this->uploadUrl, '[userid]')) {
             $this->uploadFolder=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->uploadFolder);
             $this->uploadUrl=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->uploadUrl);
+
         }
+
+        //$this->userRootdir=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->userRootdir);
+       //$path_to_file_limit=$this->userRootdir. DIRECTORY_SEPARATOR .Yii::$app->user->identity->getId().'.txt';
+        //file_put_contents ($path_to_file_limit,$this->limitValue);
         if (!is_dir($this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder))) {
             mkdir($this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder), 0777, true);
+        }
+        if($this->onlyAutorizeUsers && $this->DiskSizeLimit){
+            $this->userRootdir=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->userRootdir);
+        }
+        //$incl_upl=str_replace("/","_",$this->uploadFolder);
+        //$incl_userroot=str_replace("/","_",$this->userRootdir);
+        //echo (mb_strpos($incl_upl, $incl_userroot));
+        //if (mb_strpos($incl_upl, $incl_userroot)==='false'){echo "true";} else {echo "false";}
+        echo mb_strpos ($this->uploadFolder, $this->userRootdir."sd");
+        //exit;
+        if($this->onlyAutorizeUsers && $this->DiskSizeLimit && $this->userRootdir && is_numeric($this->limitValue) &&
+            mb_strpos ($this->uploadFolder, $this->userRootdir)==='false'
+        ) {
+            $path_to_file_limit=$this->userRootdir. DIRECTORY_SEPARATOR .Yii::$app->user->identity->getId().'.txt';
+            file_put_contents ($path_to_file_limit,$this->limitValue);
         }
         if(!Yii::$app->cache->exists('roxy_last_order')) {
             Yii::$app->cache->set('roxy_last_folder', $this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder));
@@ -148,8 +190,9 @@ class RoxyFilemanWidget extends Widget {
             'folder' => $defaultFolder,
             'sort'   => $defaultOrder,
         ]);
-    echo '
-<div class="wrapper" style="width:850px;height: 475px;display: inline-block;">
+        $output='';
+        $output.= '
+<div class="wrapper" style="width:930px;height: 490px;display: inline-block;">
 	<section class="body">
 		<div class="col-sm-4 left-body">
 			<div class="actions">
@@ -172,18 +215,18 @@ class RoxyFilemanWidget extends Widget {
                 <div class="row">
                     <div class="col-sm-12">
                            <label class="btn btn-sm btn-primary" title="'. Yii::t('roxy', 'Upload files') .'">';
-                    echo Html::activeFileInput((new UploadForm()), 'file', [
-                        'multiple'  => true,
-                        'name'      => 'UploadForm[file][]',
-                        'data-href' => $fileListUrl,
-                        'data-url'  => Url::to([
-                            '/roxymce/management/file-upload',
-                            'folder' => $defaultFolder,
-                        ]),
+                    $output.=  Html::activeFileInput((new UploadForm()), 'file', [
+                            'multiple'  => true,
+                            'name'      => 'UploadForm[file][]',
+                            'data-href' => $fileListUrl,
+                            'data-url'  => Url::to(['/roxymce/management/file-upload', 'folder' => $defaultFolder]),
                     ]);
-        echo '<i class="fa fa-plus"></i>'. Yii::t('roxy', 'Add file') .'
+        $output.=  '<i class="fa fa-plus"></i>'. Yii::t('roxy', 'Add file') .'
                 </label>
-                <a class="btn btn-sm btn-info btn-file-preview" disabled="disabled" title="'. Yii::t('roxy', 'Preview selected file') .'">
+                    <label class="btn btn-sm btn-primary" onclick="fancyDownloadUrl()" title="'. Yii::t('roxy', 'Upload file from URL') .'">
+                    <i class="fa fa-plus"></i>'. Yii::t('roxy', 'Add from URL') .'
+                </label>
+                <a class="btn btn-sm btn-info btn-file-preview" id="btn-file-preview" disabled="disabled" title="'. Yii::t('roxy', 'Preview selected file') .'">
                     <i class="fa fa-search"></i>'. Yii::t('roxy', 'Preview').'
                 </a>
                 <button type="button" id="btn-file-rename" class="btn btn-sm btn-warning" onclick="fancyRename(\'file\')" disabled="disabled" title="'. Yii::t('roxy', 'Rename file') .'">
@@ -201,17 +244,27 @@ class RoxyFilemanWidget extends Widget {
     <div class="actions second-row">
         <div class="row">
             <div class="col-sm-4">';
-                if($_COOKIE["roxyFileMan"]){
-                    if($_COOKIE["roxyFileMan"] == 'list_view'){$sv_list='btn-primary'; $sv_th='';} else {$sv_list=''; $sv_th='btn-primary';}
+                $sv_list='';
+                $sv_th='';
+                if(isset($_COOKIE["roxyFileMan"])) {
+                    if ($_COOKIE["roxyFileMan"]) {
+                        if ($_COOKIE["roxyFileMan"] == 'list_view') {
+                            $sv_list = 'btn-primary';
+                            $sv_th = '';
+                        } else {
+                            $sv_list = '';
+                            $sv_th = 'btn-primary';
+                        }
+                    }
                 }
                 else if($this->defaultView != 'list'){$sv_list='btn-primary'; $sv_th='';} else {$sv_list=''; $sv_th='btn-primary';}
                 $lvtitle=Yii::t('roxy', 'List view');
                 $thvtitle=Yii::t('roxy', 'Thumbnails view');
-                echo "<button type=\"button\" data-action=\"switch_view\" data-name=\"list_view\" class=\"btn btn-default $sv_list\" title=\"$lvtitle\">";
-                echo'    <i class="fa fa-list"></i>
+        $output.= "<button type=\"button\" data-action=\"switch_view\" data-name=\"list_view\" class=\"btn btn-default $sv_list\" title=\"$lvtitle\">";
+        $output.='    <i class="fa fa-list"></i>
                 </button>';
-                echo "<button type=\"button\" data-action=\"switch_view\" data-name=\"thumb_view\" class=\"btn btn-default $sv_th\" title=\"$thvtitle\">";
-                echo '<i class="fa fa-picture-o"></i>
+        $output.= "<button type=\"button\" data-action=\"switch_view\" data-name=\"thumb_view\" class=\"btn btn-default $sv_th\" title=\"$thvtitle\">";
+        $output.= '<i class="fa fa-picture-o"></i>
                 </button>
             </div>
             <div class="col-sm-8">
@@ -227,13 +280,13 @@ class RoxyFilemanWidget extends Widget {
     <div class="file-body">
         <div class="scrollPane file-list" data-url="'. $fileListUrl .'">';
         if($this->defaultView == 'list'){ $sort_act='block';} else {$sort_act='none';}
-            echo "<div class=\"sort-actions\" style=\"display: $sort_act;\">";
-               echo' <div class="row">
+        $output.= "<div class=\"sort-actions\" style=\"display: $sort_act;\">";
+        $output.=' <div class="row">
                     <div class="col-sm-7">';
                         if($defaultOrder == FolderHelper::SORT_NAME_ASC || $defaultOrder == FolderHelper::SORT_NAME_DESC) { $class_name_sort='sorted';} else {  $class_name_sort='';}
                         if($defaultOrder == FolderHelper::SORT_NAME_ASC) {$name_sort='asc'; } else { $name_sort='desc';}
-                        echo "<div class=\"pull-left $class_name_sort\" rel=\"order\" data-order=\"name\" data-sort=\"$name_sort\">";
-                        echo '    <i class="fa fa-long-arrow-up"></i>
+        $output.= "<div class=\"pull-left $class_name_sort\" rel=\"order\" data-order=\"name\" data-sort=\"$name_sort\">";
+        $output.= '    <i class="fa fa-long-arrow-up"></i>
                             <i class="fa fa-long-arrow-down"></i>
                             <span> '. Yii::t('roxy', 'Name') .'</span>
                         </div>
@@ -241,8 +294,8 @@ class RoxyFilemanWidget extends Widget {
                     <div class="col-sm-2">';
                         if($defaultOrder == FolderHelper::SORT_SIZE_ASC || $defaultOrder == FolderHelper::SORT_SIZE_DESC) { $class_size_sort='sorted';} else {  $class_size_sort='';}
                         if($defaultOrder == FolderHelper::SORT_SIZE_ASC) {$size_sort='asc'; } else { $size_sort='desc';}
-                        echo "<div class=\"pull-right  $class_size_sort\" rel=\"order\" data-order=\"size\" data-sort=\"$size_sort\">";
-                        echo '    <i class="fa fa-long-arrow-up"></i>
+        $output.= "<div class=\"pull-right  $class_size_sort\" rel=\"order\" data-order=\"size\" data-sort=\"$size_sort\">";
+        $output.= '    <i class="fa fa-long-arrow-up"></i>
                             <i class="fa fa-long-arrow-down"></i>
                             <span> '. Yii::t('roxy', 'Size') .'</span>
                         </div>
@@ -250,8 +303,8 @@ class RoxyFilemanWidget extends Widget {
                     <div class="col-sm-3">';
                         if($defaultOrder == FolderHelper::SORT_DATE_ASC || $defaultOrder == FolderHelper::SORT_DATE_DESC) { $class_date_sort='sorted';} else {  $class_date_sort='';}
                         if($defaultOrder == FolderHelper::SORT_DATE_ASC) {$date_sort='asc'; } else { $date_sort='desc';}
-                        echo "<div class=\"pull-right $class_date_sort\" rel=\"order\" data-order=\"date\" data-sort=\"$date_sort\">";
-                         echo '<i class="fa fa-long-arrow-up"></i>
+        $output.= "<div class=\"pull-right $class_date_sort\" rel=\"order\" data-order=\"date\" data-sort=\"$date_sort\">";
+        $output.= '<i class="fa fa-long-arrow-up"></i>
                             <i class="fa fa-long-arrow-down"></i>
                             <span> '. Yii::t('roxy', 'Date') .'</span>
                         </div>
@@ -273,7 +326,7 @@ class RoxyFilemanWidget extends Widget {
             </div>
         </div>';
         if(!$this->NoFooterButton) {
-            echo '<div class="col-sm-3 col-sm-offset-3 pull-right">
+            $output.= '<div class="col-sm-3 col-sm-offset-3 pull-right">
             <button type="button" class="btn btn-success btn-roxymce-select" disabled title="' . Yii::t('roxy', 'Select highlighted file') . '">
                 <i class="fa fa-check"></i> ' . Yii::t('roxy', 'Select') . '
             </button>
@@ -282,7 +335,7 @@ class RoxyFilemanWidget extends Widget {
             </button>
         </div>';
         }
-    echo '</div>
+        $output.= '</div>
 </section>
 </div>
 <div class="modal fade" id="folder-create">
@@ -361,13 +414,41 @@ class RoxyFilemanWidget extends Widget {
             </div>
         </div>
     </div>
-</div>';
-        //$this->view->registerJsFile('js/roxy.min.js');
+</div>
+<div class="modal fade" id="file-download-url">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">'. Yii::t('roxy', 'Rename selected file') .'</h4>
+            </div>
+            <div class="modal-body">
+                <div id="form-download-url">
+                <form action="'. Url::to(['/roxymce/management/file-download-url']) .'" method="get" role="form" >
+                    <input type="hidden" name="folder" value="">
+                    <div class="form-group">
+                        <input type="text" class="form-control" name="url" id="url" placeholder="'.Yii::t('roxy', 'URL link').'">
+                    </div>
+                </form>
+                <button type="button" class="btn btn-primary btn-submit" onclick="fancyDownloadUrlAction()">'. Yii::t('roxy', 'Download') .'</button>
+                <button type="button" class="btn btn-default" onclick="$.fancybox.close();">'. Yii::t('roxy', 'Close') .'</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+';
+        $this->view->registerJsFile('js/roxy.js');
+        ($this->NoImgPreview)? $this->NoImgPreview='true':$this->NoImgPreview='false';
         $this->view->registerJs('showFolderList(folder_list.data(\'url\'));
         showFileList($(".file-list").data(\'url\'));
         reinit_right_click();
-        $("#modal.modal-body > a#single_image").fancybox();', View::POS_END);
+        no_image_prev='.$this->NoImgPreview.';
+        top_ratio='.$this->topRatio.';
+        ', View::POS_END);
 
-
+        return $output;
     }
 }

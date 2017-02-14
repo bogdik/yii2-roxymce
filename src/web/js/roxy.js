@@ -2,6 +2,8 @@ var node_id                     = 0;
 var folder_list                 = $(".folder-list");
 var current_url                 = '';
 var file_cut, file_copy, target = null;
+var no_image_prev=false;
+var top_ratio='0.1';
 /**
  * Set cookies functional
  * @name String name for cookie
@@ -43,7 +45,7 @@ function fancyAlert(msg) {
 		'autoCenter': false,
 		'fitToView': false,
 		'autoResize': false,
-		'topRatio': '0.2',
+		'topRatio': top_ratio,
 		'content' : "<div style=\"margin:1px;width:240px;\">"+msg+"<div style=\"text-align:right;margin-top:10px;\">" +
 		"<span class='btn btn-success' style=\"bottom: 0;right: 0;position: absolute;\" onclick=\"$.fancybox.close();\">"+msg_ok+"</span></div></div>"
 	});
@@ -62,7 +64,7 @@ function fancyRename(type) {
 			autoCenter: false,
 			fitToView: false,
 			autoResize: false,
-			topRatio: '0.1',
+			topRatio: top_ratio,
 			content : content
 		});
 		if(type=='folder'){
@@ -146,8 +148,46 @@ function fancyCreate() {
 		autoCenter: false,
 		fitToView: false,
 		autoResize: false,
-		topRatio: '0.1',
+		topRatio: top_ratio,
 		content : "<div style=\"margin:1px;width:240px;\">"+$('#form-folder-create').html()+"</div>"
+	});
+}
+/**
+ * The modal for download from URL window through Fancybox
+ */
+function fancyDownloadUrl() {
+	$.fancybox({
+		autoCenter: false,
+		fitToView: false,
+		autoResize: false,
+		topRatio: top_ratio,
+		content : "<div style=\"margin:1px;width:450px;\">"+$('#form-download-url').html()+"</div>"
+	});
+}
+/**
+ * Download action functional
+ */
+function fancyDownloadUrlAction() {
+	var form = $(".fancybox-wrap").find("form");
+	$.ajax({
+		type    : "GET",
+		cache   : false,
+		data    : form.serializeArray(),
+		url     : form.attr("action"),
+		dataType: "json",
+		success : function(response) {
+			if(response.error == 0) {
+				$.fancybox.close();
+				var node = $(".folder-list").treeview('getSelected');
+				$(".image-list").append(response.html);
+				showFileList(node[0].href);
+			} else {
+				fancyAlert(response.message);
+			}
+		},
+		error   : function() {
+			fancyAlert(msg_somethings_went_wrong);
+		}
 	});
 }
 /**
@@ -257,7 +297,7 @@ function fancyConfirm(msg,callback) {
 		autoCenter: false,
 		fitToView: false,
 		autoResize: false,
-		topRatio: '0.1',
+		topRatio: top_ratio,
 		closeBtn: true,
 		hideOnOverlayClick: true,
 		content : "<div style=\"margin:1px;width:340px;\">"+msg+"<div style=\"text-align:right;margin-top:10px;\">" +
@@ -279,6 +319,35 @@ function fancyConfirm(msg,callback) {
 		}
 	});
 }
+
+/**
+ * Preview folder functional
+
+function fancyPreview(){
+	var selected=$(".file-list-item .selected");
+	if ((selected.data('image')== 1 || no_image_prev) && selected.attr('data-url')) {
+		$.fancybox({
+			href: selected.attr('data-url'),
+			title: selected.attr('data-title'),
+			type: selected.data('image') == 1 ? 'image' : 'iframe',
+			padding: 5,
+			fitToView: true,
+			autoSize: true
+		});
+	} else {
+		var msg='';
+		if(selected.data('image')!= 1 && !no_image_prev){
+			msg=msg_no_img_error;
+		} else if(!selected.attr('data-url')){
+			msg=msg_no_url_error;
+		} else {
+			msg=msg_somethings_went_wrong;
+		}
+		fancyAlert(msg);
+	}
+}
+ */
+
 /**
  * Event when document loaded
  */
@@ -301,6 +370,9 @@ $(document).on("submit", 'form', function(e) {
 $(document).on('nodeSelected', '.folder-list', function(event, currentNode) {
 	reloadTreeview(currentNode);
 	showFileList(currentNode.href);
+	var node  = $(".folder-list").treeview('getSelected');
+	var modal = $("#file-download-url");
+	modal.find("input[name='folder']").val(node[0].path);
 });
 /**
  * Event switch view
@@ -325,12 +397,18 @@ $(document).on("click", ".file-list-item .thumb,.file-list-item .list", function
 	th.addClass("selected");
 	$(".first-row button,.first-row a").removeAttr("disabled");
 	$(".btn-file-download").attr('href', th.attr('data-url')).attr('target', '_blank');
-	$(".btn-file-preview").attr('href', th.attr('data-url')).attr('title', th.attr('data-title')).fancybox({
-		type     : th.data('image') == 1 ? 'image' : 'iframe',
-		padding  : 5,
-		fitToView: true,
-		autoSize : true
-	});
+	var btn_preview=$(".btn-file-preview");
+	btn_preview.attr('href', th.attr('data-url')).attr('title', th.attr('data-title'));
+	if ((th.data('image')== 1 || no_image_prev)) {
+			btn_preview.fancybox({
+				type: th.data('image') == 1 ? 'image' : 'iframe',
+				padding: 5,
+				fitToView: true,
+				autoSize: true
+			});
+		} else if(th.data('image')!= 1 && !no_image_prev){
+			btn_preview.attr('href', '').attr('disabled', 'disabled');
+		}
 	var node  = $(".folder-list").treeview('getSelected');
 	var modal = $("#file-rename");
 	modal.find("input[name='file']").val(th.attr('data-title'));
@@ -681,7 +759,11 @@ $.contextMenu({
 				name: msg_preview,
 				icon: "fa-search",
 				callback: function () {
-					$(".btn-file-preview").trigger('click');
+					if($("#btn-file-preview").length){
+						$("#btn-file-preview").trigger('click');
+					} else {
+						$(".btn-file-preview").trigger('click');
+					}
 				},
 				disabled: function () {
 					return target.closest(".item").length == 0;
@@ -983,6 +1065,7 @@ function reloadActionButton() {
 	btn_file_download.removeAttr('href').attr('title', btn_file_download.text());
 	$(".btn-roxymce-select").attr('disabled', 'disabled');
 }
+
 function closeDialog(dialog) {
 	switch(dialog) {
 		case 'fancybox':

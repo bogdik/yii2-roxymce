@@ -12,6 +12,7 @@ namespace bogdik\roxymce\controllers;
 
 use bogdik\roxymce\helpers\FileHelper;
 use bogdik\roxymce\helpers\FolderHelper;
+use bogdik\roxymce\helpers\Punycode;
 use bogdik\roxymce\models\UploadForm;
 use bogdik\roxymce\Module;
 use Yii;
@@ -22,6 +23,7 @@ use yii\helpers\Url;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\web\UploadedFile;
+use yii\helpers\BaseInflector;
 
 /**
  * @property Module $module
@@ -67,7 +69,9 @@ class ManagementController extends Controller {
 		if ($folder == '') {
 			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
-        if(stristr($name, '../') || stristr($name, '..\\')){
+        $name=strip_tags($name);
+        $name=FileHelper::filenameClean(FileHelper::filenameTranslitirate($name));
+        if(stristr($name, './') || stristr($name, '.\\') || !$name){
             return [
                 'error'   => 1,
                 'message' => Yii::t('roxy', 'Wrong name'),
@@ -196,9 +200,12 @@ class ManagementController extends Controller {
 				'message' => Yii::t('roxy', 'Can\'t rename root folder'),
 			];
 		}
+        $name=strip_tags($name);
+        $name=FileHelper::filenameClean(FileHelper::filenameTranslitirate($name));
 		$folder    = $this->module->NoAlias ? $folder : realpath($folder);
 		$newFolder = dirname($folder) . DIRECTORY_SEPARATOR . $name;
-        if(stristr($newFolder, '../') || stristr($newFolder, '..\\')){
+
+        if(stristr($newFolder, './') || stristr($newFolder, '.\\') || !$name){
             return [
                 'error'   => 1,
                 'message' => Yii::t('roxy', 'Wrong name'),
@@ -244,7 +251,7 @@ class ManagementController extends Controller {
                 'message' => Yii::t('roxy', 'Can\'t delete root folder'),
             ];
         }
-        if(stristr($folder, '../') || stristr($folder, '..\\')){
+        if(stristr($folder, './') || stristr($folder, '.\\')){
             return [
                 'error'   => 1,
                 'message' => Yii::t('roxy', 'Wrong name'),
@@ -318,6 +325,61 @@ class ManagementController extends Controller {
 		];
 	}
 
+    /**
+     * @param string $folder
+     *
+     * @return array
+     */
+    public function actionFileDownloadUrl($folder = '',$url='') {
+        if ($folder == '') {
+            $folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
+        }
+        $folder = $this->module->NoAlias ? $folder : realpath($folder);
+        if (is_dir($folder)) {
+            $protocol='';
+            if (strripos($url, 'http://') !== false) {
+                $protocol='http://';
+            } else if(strripos($url, 'https://') !== false) {
+                $protocol='https://';
+            }
+            $url_without_protocol=str_replace($protocol,'',$url);
+            $clean_url=explode('/',$url_without_protocol);
+            $clean_url_param=str_replace($protocol.$clean_url[0],'',$url);
+            $get='';
+            if (strripos($clean_url_param, '?') !== false) {
+                $get=explode('?', $clean_url_param);
+                $clean_url_param=$get[0];
+                $get='?'.$get[1];
+            }
+            $pn=new Punycode('UTF-8');
+            $clean_url=$pn->encode($clean_url[0]);
+            $normal_url=$protocol.$clean_url.$clean_url_param;
+            $file='';
+            $ext='';
+            if (mb_strrpos($clean_url_param, '/') !== false) {
+                $file= mb_substr($clean_url_param, mb_strrpos($clean_url_param, '/') + 1);
+                $ext=FileHelper::fileExtension($file);
+            }
+            $allow_exts=explode(' ', $this->module->allowExtension);
+            if(!array_search($ext, $allow_exts)){
+                return [
+                    'error'   => 1,
+                    'message' => Yii::t('roxy', 'No allowed extension'),
+                ];
+            } else {
+                $file=FileHelper::filenameClean(FileHelper::filenameTranslitirate($file));
+                file_put_contents($folder. DIRECTORY_SEPARATOR .$file, file_get_contents($normal_url.$get));
+                return [
+                    'error' => 0,
+                ];
+            }
+
+        }
+        return [
+            'error'   => 1,
+            'message' => Yii::t('roxy', 'Somethings went wrong'),
+        ];
+    }
 	/**
 	 * @param string $folder
 	 * @param        $file
@@ -333,12 +395,14 @@ class ManagementController extends Controller {
 			];
 		}
 
+        $name=strip_tags($name);
+        $name=FileHelper::filenameClean(FileHelper::filenameTranslitirate($name));
 		$folder  = $this->module->NoAlias ? $folder : realpath($folder);
 		$oldFile = $folder . DIRECTORY_SEPARATOR . $file;
 		$newFile = $folder . DIRECTORY_SEPARATOR . $name;
         if($this->module->NoChangeFileExt){
-            $oldFile_ext = substr(strrchr($oldFile, "."), 1);
-            $newFile_ext = substr(strrchr($newFile, "."), 1);
+            $oldFile_ext = FileHelper::fileExtension($oldFile);
+            $newFile_ext = FileHelper::fileExtension($newFile);
             if($oldFile_ext!=$newFile_ext){
                 return [
                     'error'   => 1,
@@ -346,7 +410,7 @@ class ManagementController extends Controller {
                 ];
             }
         }
-        $path_info =  pathinfo($newFile);
+        $path_info =  pathinfo($name);
         if($path_info['filename']==""){
             return [
                 'error'   => 1,

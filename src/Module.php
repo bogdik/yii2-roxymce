@@ -33,7 +33,14 @@ class Module extends \bogdik\base\Module {
      *             If you use AddUserIdToPath then [userid] must be add to string
 	 */
 	public $uploadUrl = '/uploads/images';
-
+    /**
+     * @var string root user directory need for disk size limit feature
+     *             must be start with @
+     *             If you use AddUserIdToPath then [userid] must be add to string
+     *             example uploads/[userid]
+     *             this var must be included in var uploadFolder
+     */
+    public $userRootdir = '';
 	/**
 	 * @var string default view type
 	 */
@@ -70,6 +77,14 @@ class Module extends \bogdik\base\Module {
      */
     public $NoAlias = true;
     /**
+     * @var bool Limit disk size for user
+     */
+    public $DiskSizeLimit = false;
+    /**
+     * @var int Limit disk size value for user in bytes Default 512mb.
+     */
+    public $limitValue = 536870912;
+    /**
      * @var bool Do not change the file extension from
      */
     public $NoChangeFileExt = true;
@@ -77,6 +92,14 @@ class Module extends \bogdik\base\Module {
      * @var bool No show buttons on Footer (Insert and Close)
      */
     public $NoFooterButton = false;
+    /**
+     * @var bool No img filetypes preview, enable this may be dangerous xss
+     */
+    public $NoImgPreview = false;
+    /**
+     * @var string top ratio
+     */
+    public $topRatio = '0.1';
 	/**
 	 * @var string default allowed files extension
 	 */
@@ -105,6 +128,13 @@ class Module extends \bogdik\base\Module {
 		if (!is_dir($this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder))) {
 			mkdir($this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder), 0777, true);
 		}
+        if($this->onlyAutorizeUsers && $this->DiskSizeLimit && strripos($this->uploadFolder, '[userid]') &&
+            !$this->userRootdir && strripos($this->uploadFolder, $this->userRootdir) && is_int($this->limitValue)
+        ) {
+            $this->userRootdir=strripos($this->userRootdir, '[userid]');
+            $path_to_file_limit=$this->userRootdir. DIRECTORY_SEPARATOR .Yii::$app->user->identity->getId().'.txt';
+            file_put_contents ($path_to_file_limit,$this->limitValue);
+        }
 		if(!Yii::$app->cache->exists('roxy_last_order')) {
 			Yii::$app->cache->set('roxy_last_folder', $this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder));
 		}

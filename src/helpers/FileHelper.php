@@ -13,7 +13,7 @@ namespace bogdik\roxymce\helpers;
 use bogdik\roxymce\Module;
 use Yii;
 use yii\base\InvalidConfigException;
-
+use yii\helpers\BaseInflector;
 
 class FileHelper {
 
@@ -115,7 +115,38 @@ class FileHelper {
 		}
 		return strtolower($ext);
 	}
-
+    /**
+     * Returns file name without ext
+     *
+     * @param string $filename
+     *
+     * @return string
+     */
+    public static function fileName($filename) {
+        return basename($filename,'.'.self::fileExtension($filename));
+    }
+    /**
+     * Returns clean filename
+     *
+     * @param string $filename
+     *
+     * @return string
+     */
+    public static function filenameClean($filename) {
+        $filename = str_replace(' ', '_', $filename); // Replaces all spaces with hyphens.
+        return preg_replace('/[^A-Za-z0-9\-._]/', '', $filename); // Removes special chars.
+    }
+    /**
+     * Returns translitirate filename
+     *
+     * @param string $filename
+     *
+     * @return string
+     */
+    public static function filenameTranslitirate($filename)
+    {
+        return BaseInflector::transliterate($filename);
+    }
 	/**
 	 * Returns MIME type of $filename
 	 *
@@ -180,7 +211,7 @@ class FileHelper {
 	public static function isImage($fileName) {
 		$ret = false;
 		$ext = strtolower(self::fileExtension($fileName));
-		if ($ext === 'jpg' || $ext === 'jpeg' || $ext === 'jpe' || $ext === 'png' || $ext === 'gif' || $ext === 'ico') {
+		if ($ext === 'jpg' || $ext === 'jpeg' || $ext === 'jpe' || $ext === 'png' || $ext === 'gif' || $ext === 'ico' || $ext === 'tiff' || $ext === 'tif') {
 			$ret = true;
 		}
 		return $ret;

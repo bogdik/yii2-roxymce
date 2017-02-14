@@ -40,7 +40,7 @@ class RoxyMceAsset extends AssetBundle {
 			YII_ENV_DEV ? 'css/roxy.css' : 'css/roxy.min.css',
 		];
 		$this->js         = [
-			YII_ENV_DEV ? 'js/roxy.js' : 'js/roxy.min.js',
+			//YII_ENV_DEV ? 'js/roxy.js' : 'js/roxy.min.js',
 		];
 		Yii::$app->view->registerJs('var msg_somethings_went_wrong = "' . Yii::t('roxy', 'Somethings went wrong') . '",
 msg_empty_directory = "' . Yii::t('roxy', 'Empty directory') . '",
@@ -55,6 +55,8 @@ msg_rename = "' . Yii::t('roxy', 'Rename') . '",
 msg_delete = "' . Yii::t('roxy', 'Delete') . '",
 msg_ok = "' . Yii::t('roxy', 'Ok') . '",
 msg_cancel = "' . Yii::t('roxy', 'Cancel') . '",
+msg_no_img_error = "' . Yii::t('roxy', 'File type is not a picture can not be displayed') . '",
+msg_no_url_error = "' . Yii::t('roxy', 'Wrong url') . '",
 url_folder_remove = "' . Url::to(['/roxymce/management/folder-remove']) . '",
 url_file_upload = "' . Url::to(['/roxymce/management/file-upload']) . '",
 url_file_cut = "' . Url::to(['/roxymce/management/file-cut']) . '",
