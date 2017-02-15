@@ -156,10 +156,10 @@ class RoxyFilemanWidget extends Widget {
         //$incl_userroot=str_replace("/","_",$this->userRootdir);
         //echo (mb_strpos($incl_upl, $incl_userroot));
         //if (mb_strpos($incl_upl, $incl_userroot)==='false'){echo "true";} else {echo "false";}
-        echo mb_strpos ($this->uploadFolder, $this->userRootdir."sd");
+        //echo strripos ($this->uploadFolder, $this->userRootdir);
         //exit;
         if($this->onlyAutorizeUsers && $this->DiskSizeLimit && $this->userRootdir && is_numeric($this->limitValue) &&
-            mb_strpos ($this->uploadFolder, $this->userRootdir)==='false'
+            is_int(strripos($this->uploadFolder, $this->userRootdir))
         ) {
             $path_to_file_limit=$this->userRootdir. DIRECTORY_SEPARATOR .Yii::$app->user->identity->getId().'.txt';
             file_put_contents ($path_to_file_limit,$this->limitValue);
@@ -192,24 +192,30 @@ class RoxyFilemanWidget extends Widget {
         ]);
         $output='';
         $output.= '
-<div class="wrapper" style="width:930px;height: 490px;display: inline-block;">
+<div class="wrapper" style="width:935px;height: 490px;display: inline-block;">
 	<section class="body">
 		<div class="col-sm-4 left-body">
 			<div class="actions">
 				<button type="button" class="btn btn-sm btn-primary" onclick="fancyCreate()" title="'. Yii::t('roxy', 'Create new folder').'">
-					<i class="fa fa-plus-square"></i>'.Yii::t('roxy', 'Create').'
+					<i class="fa fa-plus-square"></i> '.Yii::t('roxy', 'Create').'
                 </button>
                 <button type="button" class="btn btn-sm btn-warning" onclick="fancyRename(\'folder\')" title="'. Yii::t('roxy', 'Rename selected folder') .'">
-                    <i class="fa fa-pencil-square"></i>'. Yii::t('roxy', 'Rename').'
+                    <i class="fa fa-pencil-square"></i> '. Yii::t('roxy', 'Rename').'
                 </button>
                 <button type="button" class="btn btn-sm btn-danger" onclick="fancyConfirm(\''. Yii::t('roxy', 'Are you sure you want to delete folder') .'\'+\': \'+$(\'.node-selected\').text(),fancyRemoveFolder)" title="'. Yii::t('roxy', 'Delete selected folder') .'">
-                    <i class="fa fa-trash"></i>'. Yii::t('roxy', 'Delete') .'
+                    <i class="fa fa-trash"></i> '. Yii::t('roxy', 'Delete') .'
                 </button>
              </div>
              <div class="scrollPane folder-list" data-url="'. Url::to(['/roxymce/management/folder-list']) .'">
                     <div class="folder-list-item"></div>
-             </div>
-        </div>
+             </div>';
+             if($this->onlyAutorizeUsers && $this->DiskSizeLimit && is_numeric($this->limitValue) && $this->userRootdir) {
+                 $output .= '
+                <div id="file-quota" class="text-center">
+                </div>
+                ';
+             }
+        $output .= '</div>
         <div class="col-sm-8 right-body">
             <div class="actions first-row">
                 <div class="row">
@@ -221,13 +227,13 @@ class RoxyFilemanWidget extends Widget {
                             'data-href' => $fileListUrl,
                             'data-url'  => Url::to(['/roxymce/management/file-upload', 'folder' => $defaultFolder]),
                     ]);
-        $output.=  '<i class="fa fa-plus"></i>'. Yii::t('roxy', 'Add file') .'
+        $output.=  '<i class="fa fa-plus"></i> '. Yii::t('roxy', 'Add file') .'
                 </label>
                     <label class="btn btn-sm btn-primary" onclick="fancyDownloadUrl()" title="'. Yii::t('roxy', 'Upload file from URL') .'">
-                    <i class="fa fa-plus"></i>'. Yii::t('roxy', 'Add from URL') .'
+                    <i class="fa fa-plus"></i> '. Yii::t('roxy', 'Add from URL') .'
                 </label>
                 <a class="btn btn-sm btn-info btn-file-preview" id="btn-file-preview" disabled="disabled" title="'. Yii::t('roxy', 'Preview selected file') .'">
-                    <i class="fa fa-search"></i>'. Yii::t('roxy', 'Preview').'
+                    <i class="fa fa-search"></i> '. Yii::t('roxy', 'Preview').'
                 </a>
                 <button type="button" id="btn-file-rename" class="btn btn-sm btn-warning" onclick="fancyRename(\'file\')" disabled="disabled" title="'. Yii::t('roxy', 'Rename file') .'">
                     <i class="fa fa-pencil"></i> '. Yii::t('roxy', 'Rename file') .'
@@ -319,7 +325,7 @@ class RoxyFilemanWidget extends Widget {
 <section class="footer" style="bottom: -15px;">
     <div class="row bottom">
         <div class="col-sm-6 pull-left">
-            <div class="progress" style="display: none;">
+            <div class="progress upload" style="display: none;">
                 <div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
 
                 </div>
@@ -440,13 +446,14 @@ class RoxyFilemanWidget extends Widget {
     </div>
 </div>
 ';
-        $this->view->registerJsFile('js/roxy.js');
+        //$this->view->registerJsFile('js/roxy.js');
         ($this->NoImgPreview)? $this->NoImgPreview='true':$this->NoImgPreview='false';
         $this->view->registerJs('showFolderList(folder_list.data(\'url\'));
         showFileList($(".file-list").data(\'url\'));
         reinit_right_click();
         no_image_prev='.$this->NoImgPreview.';
         top_ratio='.$this->topRatio.';
+        getFileQuota();
         ', View::POS_END);
 
         return $output;

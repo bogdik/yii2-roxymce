@@ -168,7 +168,34 @@ class FolderHelper {
 		}
 		return array_keys($files);
 	}
+    /**
+     * @return string
+     */
+    public static function getSymbolByQuantity($bytes) {
+        $symbols = array('B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB');
+        $exp = floor(log($bytes)/log(1024));
 
+        return sprintf('%.2f '.$symbols[$exp], ($bytes/pow(1024, floor($exp))));
+    }
+    /**
+     * @return number
+     */
+    private static function GetDirectorySize($path){
+        $bytestotal = 0;
+        $path = realpath($path);
+        if($path!==false){
+            foreach(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS)) as $object){
+                $bytestotal += $object->getSize();
+            }
+        }
+        return $bytestotal;
+    }
+    /**
+     * @return string
+     */
+    public static function filesSizes($path) {
+        return self::GetDirectorySize($path);
+    }
 	/**
 	 * @return string
 	 */

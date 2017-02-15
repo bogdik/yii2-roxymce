@@ -181,6 +181,7 @@ function fancyDownloadUrlAction() {
 				var node = $(".folder-list").treeview('getSelected');
 				$(".image-list").append(response.html);
 				showFileList(node[0].href);
+				getFileQuota();
 			} else {
 				fancyAlert(response.message);
 			}
@@ -238,6 +239,7 @@ function fancyRemoveFolder(ret) {
 				if(response.error == 0) {
 					showFolderList($(".folder-list").data('url'));
 					showFileList($(".file-list").data('url'));
+					getFileQuota();
 				} else {
 					fancyAlert(response.message);
 				}
@@ -273,6 +275,7 @@ function fancyRemoveFile(ret) {
 							$(this).remove();
 						})
 					}
+					getFileQuota();
 				} else {
 					fancyAlert(response.message);
 				}
@@ -284,6 +287,38 @@ function fancyRemoveFile(ret) {
 			}
 		});
 	}
+}
+/**
+ * The modal confirm window through Fancybox
+ * @msg String show message on confirm
+ * @callback Function call if accept after close
+ */
+function getFileQuota() {
+	$.ajax({
+		type    : "GET",
+		cache   : false,
+		url     : url_get_quota,
+		dataType: "json",
+		success : function(response) {
+			if(response.error == 0) {
+				var flquota=$('#file-quota');
+				if(flquota.length){
+					flquota.html(response.content);
+				}
+				var fl=$('.folder-list');
+				if(fl.css('height')=='370px'){
+					fl.css('height','335px');
+				}
+			} else {
+				fancyAlert(response.message);
+			}
+			reloadActionButton();
+		},
+		error   : function() {
+			fancyAlert(msg_somethings_went_wrong);
+			reloadActionButton();
+		}
+	});
 }
 /**
  * The modal confirm window through Fancybox
@@ -319,7 +354,6 @@ function fancyConfirm(msg,callback) {
 		}
 	});
 }
-
 /**
  * Preview folder functional
 
@@ -580,6 +614,7 @@ $(document).on("click", ".btn-file-remove", function() {
 							$(this).remove();
 						})
 					}
+					getFileQuota();
 				} else {
 					fancyAlert(response.message);
 				}
@@ -622,6 +657,7 @@ $(document).on("change", "input#uploadform-file", function() {
 			if(response.error == 0) {
 				$(".image-list").append(response.html);
 				showFileList(th.attr('data-href'));
+				getFileQuota();
 			} else {
 				fancyAlert(response.message);
 			}
@@ -853,6 +889,7 @@ $.contextMenu({
 								file_copy = false;
 								file_cut = false;
 								showFileList(node[0].href);
+								getFileQuota();
 							} else {
 								fancyAlert(response.message);
 							}
@@ -1033,11 +1070,11 @@ function progress(e) {
 		var max        = e.total;
 		var current    = e.loaded;
 		var Percentage = Math.round((current * 100) / max);
-		$(".progress-bar").css({'width': Percentage + '%'}).html(Percentage + '%');
+		$(".progress-bar.progress-bar-striped").css({'width': Percentage + '%'}).html(Percentage + '%');
 		if(Percentage >= 100) {
 			setTimeout(function() {
-				$(".progress").fadeOut('normal', function() {
-					$(".progress-bar").css({'width': '0%'}).html('0%');
+				$(".progress.upload").fadeOut('normal', function() {
+					$(".progress-bar.progress-bar-striped").css({'width': '0%'}).html('0%');
 				});
 			}, 1000);
 		}

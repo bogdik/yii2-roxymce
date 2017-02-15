@@ -303,9 +303,39 @@ class ManagementController extends Controller {
 			$folder = $this->module->NoAlias ? $this->module->uploadFolder : Yii::getAlias($this->module->uploadFolder);
 		}
 		$folder = $this->module->NoAlias ? $folder : realpath($folder);
+        if(strripos($this->module->userRootdir, '[userid]')) {
+            $this->module->userRootdir=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->module->userRootdir);
+        }
+        if($this->module->onlyAutorizeUsers && $this->module->DiskSizeLimit && $this->module->userRootdir) {
+            $file = $this->module->userRootdir . DIRECTORY_SEPARATOR . Yii::$app->user->identity->getId() . '.txt';
+            if (is_file($file)) {
+                $path_to_file_limit = file_get_contents($file);
+                $size_path = FolderHelper::filesSizes($this->module->userRootdir);
+                $model       = new UploadForm();
+                $model->file = UploadedFile::getInstances($model, 'file');
+                $filesizes=0;
+                foreach ( $model->file as $file) {
+                    $filesizes=$filesizes+$file->size;
+                }
+                if($path_to_file_limit<$size_path+$filesizes){
+                    return [
+                        'error' => 1,
+                        'message' => Yii::t('roxy', 'Disk limit reached'),
+                    ];
+                }
+
+            } else {
+                return [
+                    'error' => 1,
+                    'message' => Yii::t('roxy', 'Somethings went wrong'),
+                ];
+            }
+        }
 		if (is_dir($folder)) {
-			$model       = new UploadForm();
-			$model->file = UploadedFile::getInstances($model, 'file');
+		    if(!isset($model)) {
+                $model = new UploadForm();
+                $model->file = UploadedFile::getInstances($model, 'file');
+            }
 			if ($model->upload($folder)) {
 				return [
 					'error' => 0,
@@ -324,6 +354,38 @@ class ManagementController extends Controller {
 			'message' => Yii::t('roxy', 'Somethings went wrong'),
 		];
 	}
+
+    /**
+     * @param string $folder
+     *
+     * @return array
+     */
+    public function actionGetQuotes() {
+        if(strripos($this->module->userRootdir, '[userid]')) {
+            $this->module->userRootdir=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->module->userRootdir);
+        }
+        $file=$this->module->userRootdir . DIRECTORY_SEPARATOR . Yii::$app->user->identity->getId() . '.txt';
+        if(is_file($file)) {
+            $path_to_file_limit = file_get_contents($file);
+            $size_path = FolderHelper::filesSizes($this->module->userRootdir);
+            $limit_text = FolderHelper::getSymbolByQuantity($size_path) . '/' . FolderHelper::getSymbolByQuantity($path_to_file_limit);
+            $percents = ceil($size_path / ($path_to_file_limit / 100));
+            if($percents>100){$percents=100;}
+            return [
+                'error' => 0,
+                'content' => '<div class="progress">
+              <div class="box progress-bar progress-bar-success" role="progressbar" aria-valuenow="' . $percents . '"
+              aria-valuemin="0" aria-valuemax="100" style="width:' . $percents . '%">' . $percents . '%</div></div>'.
+                    '<span>'.$limit_text.'<span/>',
+            ];
+        } else {
+            return [
+                'error'   => 1,
+                'message' => Yii::t('roxy', 'Somethings went wrong'),
+            ];
+        }
+        //$folder = $this->module->userRootdir;
+    }
 
     /**
      * @param string $folder
@@ -369,6 +431,29 @@ class ManagementController extends Controller {
             } else {
                 $file=FileHelper::filenameClean(FileHelper::filenameTranslitirate($file));
                 file_put_contents($folder. DIRECTORY_SEPARATOR .$file, file_get_contents($normal_url.$get));
+                if(strripos($this->module->userRootdir, '[userid]')) {
+                    $this->module->userRootdir=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->module->userRootdir);
+                }
+                if($this->module->onlyAutorizeUsers && $this->module->DiskSizeLimit && $this->module->userRootdir) {
+                    $file_lim = $this->module->userRootdir . DIRECTORY_SEPARATOR . Yii::$app->user->identity->getId() . '.txt';
+                    if (is_file($file_lim)) {
+                        $path_to_file_limit = file_get_contents($file_lim);
+                        $size_path = FolderHelper::filesSizes($this->module->userRootdir);
+                        if($path_to_file_limit<$size_path){
+                            unlink($folder. DIRECTORY_SEPARATOR .$file);
+                            return [
+                                'error' => 1,
+                                'message' => Yii::t('roxy', 'Disk limit reached'),
+                            ];
+                        }
+
+                    } else {
+                        return [
+                            'error' => 1,
+                            'message' => Yii::t('roxy', 'Somethings went wrong'),
+                        ];
+                    }
+                }
                 return [
                     'error' => 0,
                 ];
@@ -536,6 +621,29 @@ class ManagementController extends Controller {
 			$return   = rename($filePath, $folder . DIRECTORY_SEPARATOR . basename($filePath));
 		} else if (Yii::$app->session->hasFlash('roxymce_copy')) {
 			$filePath = Yii::$app->session->getFlash('roxymce_copy');
+            if(strripos($this->module->userRootdir, '[userid]')) {
+                $this->module->userRootdir=str_replace("[userid]", Yii::$app->user->identity->getId(), $this->module->userRootdir);
+            }
+            if($this->module->onlyAutorizeUsers && $this->module->DiskSizeLimit && $this->module->userRootdir) {
+                $file = $this->module->userRootdir . DIRECTORY_SEPARATOR . Yii::$app->user->identity->getId() . '.txt';
+                if (is_file($file)) {
+                    $path_to_file_limit = file_get_contents($file);
+                    $size_path = FolderHelper::filesSizes($this->module->userRootdir);
+                    $filesize=filesize($filePath);
+                    if($path_to_file_limit<$size_path+$filesize){
+                        return [
+                            'error' => 1,
+                            'message' => Yii::t('roxy', 'Disk limit reached'),
+                        ];
+                    }
+
+                } else {
+                    return [
+                        'error' => 1,
+                        'message' => Yii::t('roxy', 'Somethings went wrong'),
+                    ];
+                }
+            }
             if($filePath==$folder . DIRECTORY_SEPARATOR . basename($filePath)){
                 $file_name=basename($filePath);
                 if(preg_match ('/copy_\d+/',$file_name)){

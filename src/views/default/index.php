@@ -40,6 +40,12 @@ RoxyMceAsset::register($this);
 			<div class="scrollPane folder-list" data-url="<?= Url::to(['/roxymce/management/folder-list']) ?>">
 				<div class="folder-list-item"></div>
 			</div>
+			<?php if($module->onlyAutorizeUsers && $module->DiskSizeLimit && is_numeric($module->limitValue) && $module->userRootdir) {
+			echo '
+				<div id="file-quota" class="text-center">
+				</div>
+			';
+			} ?>
 		</div>
 		<div class="col-sm-8 right-body">
 			<div class="actions first-row">
@@ -56,6 +62,9 @@ RoxyMceAsset::register($this);
 								]),
 							]) ?>
 							<i class="fa fa-plus"></i> <?= Yii::t('roxy', 'Add file') ?>
+						</label>
+						<label class="btn btn-sm btn-primary" onclick="fancyDownloadUrl()" title="<?= Yii::t('roxy', 'Upload file from URL') ?>">
+							<i class="fa fa-plus"></i> <?= Yii::t('roxy', 'Add from URL') ?>
 						</label>
 						<a class="btn btn-sm btn-info btn-file-preview" disabled="disabled" title="<?= Yii::t('roxy', 'Preview selected file') ?>">
 							<i class="fa fa-search"></i> <?= Yii::t('roxy', 'Preview') ?>
@@ -127,7 +136,7 @@ RoxyMceAsset::register($this);
 	<section class="footer">
 		<div class="row bottom">
 			<div class="col-sm-6 pull-left">
-				<div class="progress" style="display: none;">
+				<div class="progress upload" style="display: none;">
 					<div class="progress-bar progress-bar-success progress-bar-striped active" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
 
 					</div>

@@ -40,7 +40,7 @@ class RoxyMceAsset extends AssetBundle {
 			YII_ENV_DEV ? 'css/roxy.css' : 'css/roxy.min.css',
 		];
 		$this->js         = [
-			//YII_ENV_DEV ? 'js/roxy.js' : 'js/roxy.min.js',
+			YII_ENV_DEV ? 'js/roxy.js' : 'js/roxy.min.js',
 		];
 		Yii::$app->view->registerJs('var msg_somethings_went_wrong = "' . Yii::t('roxy', 'Somethings went wrong') . '",
 msg_empty_directory = "' . Yii::t('roxy', 'Empty directory') . '",
@@ -63,6 +63,7 @@ url_file_cut = "' . Url::to(['/roxymce/management/file-cut']) . '",
 url_file_copy = "' . Url::to(['/roxymce/management/file-copy']) . '",
 url_file_paste = "' . Url::to(['/roxymce/management/file-paste']) . '",
 url_file_remove = "' . Url::to(['/roxymce/management/file-remove']) . '";
+url_get_quota = "' . Url::to(['/roxymce/management/get-quotes']) . '";
 		', View::POS_HEAD);
 	}
 }
