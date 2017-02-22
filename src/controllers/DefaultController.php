@@ -42,6 +42,9 @@ class DefaultController extends Controller {
 		if ($module->rememberLastOrder && Yii::$app->cache->exists('roxy_last_order')) {
 			$defaultOrder = Yii::$app->cache->get('roxy_last_order');
 		}
+        if(!$module->state) {
+            return Yii::$app->response->redirect('/');
+        }
 		$fileListUrl = Url::to([
 			'/roxymce/management/file-list',
 			'folder' => $defaultFolder,

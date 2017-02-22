@@ -672,8 +672,14 @@ $(document).on("change", "input#uploadform-file", function() {
  */
 $(document).on("click", '.btn-roxymce-close', function() {
 	var win = (window.opener ? window.opener : window.parent);
-	win.tinyMCE.activeEditor.windowManager.close();
-	closeDialog(getUrlParam('fancybox'));
+	if(typeof(win.tinyMCE) != 'undefined'){
+		win.tinyMCE.activeEditor.windowManager.close();
+	}
+	if(getUrlParam('fancybox')){
+		closeDialog(getUrlParam('fancybox'));
+	} else {
+		closeDialog(dialog);
+	}
 });
 /**
  * Event selected file roxymce
@@ -681,8 +687,16 @@ $(document).on("click", '.btn-roxymce-close', function() {
 $(document).on("click", '.btn-roxymce-select', function() {
 	var win     = (window.opener ? window.opener : window.parent);
 	var file    = $(".file-list-item").find('.selected');
-	var input   = win.document.getElementById(getUrlParam('input'));
-	input.value = file.attr('data-url');
+	var input   = '';
+	if(getUrlParam('input')){
+		input   = win.document.getElementById(getUrlParam('input'));
+		input.value = file.attr('data-url');
+	}
+	if(!input){
+		input=$('#'+input_id);
+		input.val(file.attr('data-url')).trigger('change');
+	}
+
 	if(typeof(win.ImageDialog) != "undefined") {
 		if(win.ImageDialog.getImageData) {
 			win.ImageDialog.getImageData();
@@ -690,9 +704,14 @@ $(document).on("click", '.btn-roxymce-select', function() {
 		if(win.ImageDialog.showPreviewImage()) {
 			win.ImageDialog.showPreviewImage(file.attr('data-url'));
 		}
+		win.tinyMCE.activeEditor.windowManager.close();
 	}
-	win.tinyMCE.activeEditor.windowManager.close();
-	closeDialog(getUrlParam('fancybox'));
+	if(getUrlParam('fancybox')){
+		closeDialog(getUrlParam('fancybox'));
+	} else {
+		closeDialog(dialog);
+	}
+
 });
 /**
  * Event search files
@@ -1111,6 +1130,8 @@ function closeDialog(dialog) {
 			break;
 		case 'modal':
 			//TODO
+			var modal=$('section.body').parents('div.modal');
+			modal.modal('toggle');
 			break;
 		case 'colorbox':
 			//TODO

@@ -18,7 +18,10 @@ use yii\web\HttpException;
  * {@inheritDoc}
  */
 class Module extends \bogdik\base\Module {
-
+    /**
+     * @var string state use module
+     */
+    public $state = false;
 	/**
 	 * @var string default folder which will be used to upload resource
 	 *             must be start with @

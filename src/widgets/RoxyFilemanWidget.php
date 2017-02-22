@@ -32,7 +32,18 @@ use yii\web\View;
  * {@inheritDoc}
  */
 class RoxyFilemanWidget extends Widget {
-    public $type = 'images';
+    /**
+     * @var string type of dialog (modal,fancybox,iframe)
+     */
+    public $dialog = '';
+    /**
+     * @var string id DOM input for select
+     */
+    public $input = '';
+    /**
+     * @var string type show files in editor
+     */
+    public $type = 'image';
     /**
      * @var string default folder which will be used to upload resource
      *             must be start with @
@@ -164,6 +175,7 @@ class RoxyFilemanWidget extends Widget {
             $path_to_file_limit=$this->userRootdir. DIRECTORY_SEPARATOR .Yii::$app->user->identity->getId().'.txt';
             file_put_contents ($path_to_file_limit,$this->limitValue);
         }
+        Yii::$app->cache->set('roxy_file_type', $this->type);
         if(!Yii::$app->cache->exists('roxy_last_order')) {
             Yii::$app->cache->set('roxy_last_folder', $this->NoAlias ? $this->uploadFolder : Yii::getAlias($this->uploadFolder));
         }
@@ -446,13 +458,15 @@ class RoxyFilemanWidget extends Widget {
     </div>
 </div>
 ';
-        //$this->view->registerJsFile('js/roxy.js');
+       // $this->view->registerJsFile('js/roxy.js');
         ($this->NoImgPreview)? $this->NoImgPreview='true':$this->NoImgPreview='false';
         $this->view->registerJs('showFolderList(folder_list.data(\'url\'));
         showFileList($(".file-list").data(\'url\'));
         reinit_right_click();
         no_image_prev='.$this->NoImgPreview.';
         top_ratio='.$this->topRatio.';
+        input_id="'.$this->input.'";
+        dialog="'.$this->dialog.'";
         getFileQuota();
         ', View::POS_END);
 

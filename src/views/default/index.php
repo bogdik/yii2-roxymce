@@ -23,6 +23,7 @@ use yii\helpers\Url;
 use yii\web\View;
 
 RoxyMceAsset::register($this);
+
 ?>
 <div class="wrapper">
 	<section class="body">
