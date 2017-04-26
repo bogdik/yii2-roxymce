@@ -685,6 +685,7 @@ $(document).on("click", '.btn-roxymce-close', function() {
  * Event selected file roxymce
  */
 $(document).on("click", '.btn-roxymce-select', function() {
+	alert(media_callback);
 	var win     = (window.opener ? window.opener : window.parent);
 	var file    = $(".file-list-item").find('.selected');
 	var input   = '';
