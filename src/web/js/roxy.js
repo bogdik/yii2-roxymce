@@ -685,7 +685,6 @@ $(document).on("click", '.btn-roxymce-close', function() {
  * Event selected file roxymce
  */
 $(document).on("click", '.btn-roxymce-select', function() {
-	alert(media_callback);
 	var win     = (window.opener ? window.opener : window.parent);
 	var file    = $(".file-list-item").find('.selected');
 	var input   = '';
@@ -697,7 +696,10 @@ $(document).on("click", '.btn-roxymce-select', function() {
 		input=$('#'+input_id);
 		input.val(file.attr('data-url')).trigger('change');
 	}
-
+	if(typeof media_callback == 'function'){
+		media_callback({status: 200, error: "", url: file.attr('data-url')});
+		delete media_callback;
+	}
 	if(typeof(win.ImageDialog) != "undefined") {
 		if(win.ImageDialog.getImageData) {
 			win.ImageDialog.getImageData();
