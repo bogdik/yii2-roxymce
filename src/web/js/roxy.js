@@ -675,6 +675,10 @@ $(document).on("click", '.btn-roxymce-close', function() {
 	if(typeof(win.tinyMCE) != 'undefined'){
 		win.tinyMCE.activeEditor.windowManager.close();
 	}
+    if(typeof media_callback == 'function'){
+        media_callback({status: 300, error: "Nothing selected"});
+        delete media_callback;
+    }
 	if(getUrlParam('fancybox')){
 		closeDialog(getUrlParam('fancybox'));
 	} else {
